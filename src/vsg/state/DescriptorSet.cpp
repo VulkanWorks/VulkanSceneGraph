@@ -78,17 +78,21 @@ void DescriptorSet::write(Output& output) const
 
 void DescriptorSet::compile(Context& context)
 {
-    if (!_implementation[context.deviceID])
-    {
-        // make sure all the contributing objects are compiled
-        if (setLayout) setLayout->compile(context);
-        for (auto& descriptor : descriptors) descriptor->compile(context);
+    // make sure all the contributing objects are compiled
+    if (setLayout) setLayout->compile(context);
+    for (auto& descriptor : descriptors) descriptor->compile(context);
 
-#if USE_MUTEX
-        std::scoped_lock<std::mutex> lock(context.descriptorPool->getMutex());
-#endif
-        _implementation[context.deviceID] = DescriptorSet::Implementation::create(context.device, context.descriptorPool, setLayout);
-        _implementation[context.deviceID]->assign(context, descriptors);
+    for(auto& deviceResource : context.deviceResources)
+    {
+        if (!_implementation[deviceResource.deviceID])
+        {
+
+    #if USE_MUTEX
+            std::scoped_lock<std::mutex> lock(context.descriptorPool->getMutex());
+    #endif
+            _implementation[deviceResource.deviceID] = DescriptorSet::Implementation::create(deviceResource.device, deviceResource.descriptorPool, setLayout);
+            _implementation[deviceResource.deviceID]->assign(context, descriptors);
+        }
     }
 }
 
@@ -133,7 +137,7 @@ void DescriptorSet::Implementation::assign(Context& context, const Descriptors& 
 
     for (size_t i = 0; i < _descriptors.size(); ++i)
     {
-        descriptors[i]->assignTo(context, descriptorWrites[i]);
+        descriptors[i]->assignTo(_device->deviceID, *context.scratchMemory, descriptorWrites[i]);
         descriptorWrites[i].dstSet = _descriptorSet;
     }
 
@@ -205,19 +209,26 @@ void BindDescriptorSets::write(Output& output) const
 
 void BindDescriptorSets::compile(Context& context)
 {
-    auto& vkd = _vulkanData[context.deviceID];
-
-    // no need to compile if already compiled
-    if (vkd._vkPipelineLayout != 0 && vkd._vkDescriptorSets.size() == descriptorSets.size()) return;
-
     layout->compile(context);
-    vkd._vkPipelineLayout = layout->vk(context.deviceID);
-
-    vkd._vkDescriptorSets.resize(descriptorSets.size());
-    for (size_t i = 0; i < descriptorSets.size(); ++i)
+    for (auto& descriptorSet : descriptorSets)
     {
-        descriptorSets[i]->compile(context);
-        vkd._vkDescriptorSets[i] = descriptorSets[i]->vk(context.deviceID);
+        descriptorSet->compile(context);
+    }
+
+    for(auto& deviceResource : context.deviceResources)
+    {
+        auto& vkd = _vulkanData[deviceResource.deviceID];
+
+        // no need to compile if already compiled
+        if (vkd._vkPipelineLayout != 0 && vkd._vkDescriptorSets.size() == descriptorSets.size()) return;
+
+        vkd._vkPipelineLayout = layout->vk(deviceResource.deviceID);
+
+        vkd._vkDescriptorSets.resize(descriptorSets.size());
+        for (size_t i = 0; i < descriptorSets.size(); ++i)
+        {
+            vkd._vkDescriptorSets[i] = descriptorSets[i]->vk(deviceResource.deviceID);
+        }
     }
 }
 
@@ -277,16 +288,16 @@ void BindDescriptorSet::write(Output& output) const
 
 void BindDescriptorSet::compile(Context& context)
 {
-    auto& vkd = _vulkanData[context.deviceID];
-
-    // no need to compile if already compiled
-    if (vkd._vkPipelineLayout != 0 && vkd._vkDescriptorSet != 0) return;
-
     layout->compile(context);
     descriptorSet->compile(context);
 
-    vkd._vkPipelineLayout = layout->vk(context.deviceID);
-    vkd._vkDescriptorSet = descriptorSet->vk(context.deviceID);
+    for(auto& deviceResource : context.deviceResources)
+    {
+        auto& vkd = _vulkanData[deviceResource.deviceID];
+
+        vkd._vkPipelineLayout = layout->vk(deviceResource.deviceID);
+        vkd._vkDescriptorSet = descriptorSet->vk(deviceResource.deviceID);
+    }
 }
 
 void BindDescriptorSet::record(CommandBuffer& commandBuffer) const

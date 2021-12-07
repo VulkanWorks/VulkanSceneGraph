@@ -81,13 +81,17 @@ void PipelineLayout::write(Output& output) const
 
 void PipelineLayout::compile(Context& context)
 {
-    if (!_implementation[context.deviceID])
+    for (auto dsl : setLayouts)
     {
-        for (auto dsl : setLayouts)
+        dsl->compile(context);
+    }
+
+    for(auto& deviceResource : context.deviceResources)
+    {
+        if (!_implementation[deviceResource.deviceID])
         {
-            dsl->compile(context);
+            _implementation[deviceResource.deviceID] = PipelineLayout::Implementation::create(deviceResource.device, setLayouts, pushConstantRanges, flags);
         }
-        _implementation[context.deviceID] = PipelineLayout::Implementation::create(context.device, setLayouts, pushConstantRanges, flags);
     }
 }
 

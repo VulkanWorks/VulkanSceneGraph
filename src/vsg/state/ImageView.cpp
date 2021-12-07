@@ -127,33 +127,41 @@ void ImageView::compile(Device* device)
 
 void ImageView::compile(Context& context)
 {
-    auto& vd = _vulkanData[context.deviceID];
-    if (vd.imageView != VK_NULL_HANDLE) return;
-
-    vd.device = context.device;
-
-    VkImageViewCreateInfo info = {};
-    info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    info.pNext = nullptr;
-    info.flags = flags;
-    info.viewType = viewType;
-    info.format = format;
-    info.components = components;
-    info.subresourceRange = subresourceRange;
-
     if (image)
     {
         image->compile(context);
-
-        info.image = image->vk(vd.device->deviceID);
     }
 
-    if (VkResult result = vkCreateImageView(*vd.device, &info, vd.device->getAllocationCallbacks(), &vd.imageView); result != VK_SUCCESS)
+    for(auto& deviceResource : context.deviceResources)
     {
-        throw Exception{"Error: Failed to create vkImageView.", result};
+        auto& vd = _vulkanData[deviceResource.deviceID];
+        if (vd.imageView != VK_NULL_HANDLE) return;
+
+        vd.device = deviceResource.device;
+
+        VkImageViewCreateInfo info = {};
+        info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        info.pNext = nullptr;
+        info.flags = flags;
+        info.viewType = viewType;
+        info.format = format;
+        info.components = components;
+        info.subresourceRange = subresourceRange;
+
+        if (image)
+        {
+            info.image = image->vk(deviceResource.deviceID);
+        }
+
+        if (VkResult result = vkCreateImageView(*vd.device, &info, vd.device->getAllocationCallbacks(), &vd.imageView); result != VK_SUCCESS)
+        {
+            throw Exception{"Error: Failed to create vkImageView.", result};
+        }
     }
 }
 
+#if 0
+// TODO need to decide what to do here....
 ref_ptr<ImageView> vsg::createImageView(vsg::Context& context, ref_ptr<Image> image, VkImageAspectFlags aspectFlags)
 {
     vsg::Device* device = context.device;
@@ -178,6 +186,7 @@ ref_ptr<ImageView> vsg::createImageView(vsg::Context& context, ref_ptr<Image> im
 
     return imageView;
 }
+#endif
 
 ref_ptr<ImageView> vsg::createImageView(Device* device, ref_ptr<Image> image, VkImageAspectFlags aspectFlags)
 {

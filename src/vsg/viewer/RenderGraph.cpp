@@ -151,8 +151,11 @@ void RenderGraph::resized()
 
     auto extent = getExtent();
 
+#if 0
+// TODO need to decide what to do here....
     windowResizeHandler->context->commandPool = nullptr;
     windowResizeHandler->context->renderPass = renderPass;
+#endif
     windowResizeHandler->renderArea = renderArea;
     windowResizeHandler->previous_extent = previous_extent;
     windowResizeHandler->new_extent = extent;

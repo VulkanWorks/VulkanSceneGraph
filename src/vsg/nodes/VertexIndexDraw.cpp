@@ -110,22 +110,25 @@ void VertexIndexDraw::compile(Context& context)
         return;
     }
 
-    auto& vkd = _vulkanData[context.deviceID];
-
-    // check to see if we've already been compiled
-    if (vkd.vkBuffers.size() == arrays.size()) return;
-
-    vkd = {};
-
-    BufferInfoList combinedBufferInfos(arrays);
-    combinedBufferInfos.push_back(indices);
-
-    if (createBufferAndTransferData(context, combinedBufferInfos, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE))
+    for(auto& deviceResource : context.deviceResources)
     {
-        for (auto& bufferInfo : arrays)
+        auto& vkd = _vulkanData[deviceResource.deviceID];
+
+        // check to see if we've already been compiled
+        if (vkd.vkBuffers.size() == arrays.size()) return;
+
+        vkd = {};
+
+        BufferInfoList combinedBufferInfos(arrays);
+        combinedBufferInfos.push_back(indices);
+
+        if (createBufferAndTransferData(context, combinedBufferInfos, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE))
         {
-            vkd.vkBuffers.push_back(bufferInfo->buffer->vk(context.deviceID));
-            vkd.offsets.push_back(bufferInfo->offset);
+            for (auto& bufferInfo : arrays)
+            {
+                vkd.vkBuffers.push_back(bufferInfo->buffer->vk(deviceResource.deviceID));
+                vkd.offsets.push_back(bufferInfo->offset);
+            }
         }
     }
 

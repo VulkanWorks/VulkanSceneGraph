@@ -52,6 +52,8 @@ void TopLevelAccelerationStructure::compile(Context& context)
         _instances->set(i, *geometryInstances[i]);
     }
 
+#if 0
+// TODO need to decide what to do here....
     DataList dataList = {_instances};
 
 #if TRANSFER_BUFFERS
@@ -79,4 +81,5 @@ void TopLevelAccelerationStructure::compile(Context& context)
     Inherit::compile(context);
 
     context.buildAccelerationStructureCommands.push_back(BuildAccelerationStructureCommand::create(context.device, _accelerationStructureBuildGeometryInfo, _accelerationStructure, _geometryPrimitiveCounts, context.getAllocator()));
+#endif
 }

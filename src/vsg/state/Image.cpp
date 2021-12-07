@@ -162,7 +162,7 @@ void Image::compile(Device* device)
 
     vd.device = device;
 
-    vd.requiresDataCopy = data.valid();
+    requiresCopy = data.valid();
 
     if (VkResult result = vkCreateImage(*vd.device, &info, vd.device->getAllocationCallbacks(), &vd.image); result != VK_SUCCESS)
     {
@@ -172,22 +172,25 @@ void Image::compile(Device* device)
 
 void Image::compile(Context& context)
 {
-    auto& vd = _vulkanData[context.deviceID];
-    if (vd.image != VK_NULL_HANDLE) return;
-
-    compile(context.device);
-
-    VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(*vd.device, vd.image, &memRequirements);
-
-    auto [deviceMemory, offset] = context.deviceMemoryBufferPools->reserveMemory(memRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-    if (!deviceMemory)
+    for(auto& deviceResource : context.deviceResources)
     {
-        throw Exception{"Error: allocate memory to reserve slot.", VK_ERROR_OUT_OF_DEVICE_MEMORY};
+        auto& vd = _vulkanData[deviceResource.deviceID];
+        if (vd.image != VK_NULL_HANDLE) continue;
+
+        compile(deviceResource.device);
+
+        VkMemoryRequirements memRequirements;
+        vkGetImageMemoryRequirements(*vd.device, vd.image, &memRequirements);
+
+        auto [deviceMemory, offset] = deviceResource.deviceMemoryBufferPools->reserveMemory(memRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        if (!deviceMemory)
+        {
+            throw Exception{"Error: allocate memory to reserve slot.", VK_ERROR_OUT_OF_DEVICE_MEMORY};
+        }
+
+        requiresCopy = data.valid();
+
+        bind(deviceMemory, offset);
     }
-
-    vd.requiresDataCopy = data.valid();
-
-    bind(deviceMemory, offset);
 }

@@ -10,6 +10,8 @@ endif()
 # set up the source files explicitly.
 set(SOURCES
 
+    vk/Context.cpp
+
     core/Allocator.cpp
     core/Auxiliary.cpp
     core/ConstVisitor.cpp
@@ -173,7 +175,6 @@ set(SOURCES
 
     vk/CommandBuffer.cpp
     vk/CommandPool.cpp
-    vk/Context.cpp
     vk/ShaderCompiler.cpp
     vk/DescriptorPool.cpp
     vk/Device.cpp

@@ -67,38 +67,41 @@ void RayTracingPipeline::write(Output& output) const
 
 void RayTracingPipeline::compile(Context& context)
 {
-    if (!_implementation[context.deviceID])
+   for(auto& deviceResource : context.deviceResources)
     {
-        // compile shaders if required
-        bool requiresShaderCompiler = false;
-        for (auto& shaderStage : _shaderStages)
+        if (!_implementation[deviceResource.deviceID])
         {
-            if (shaderStage->module)
+            // compile shaders if required
+            bool requiresShaderCompiler = false;
+            for (auto& shaderStage : _shaderStages)
             {
-                if (shaderStage->module->code.empty() && !(shaderStage->module->source.empty()))
+                if (shaderStage->module)
                 {
-                    requiresShaderCompiler = true;
+                    if (shaderStage->module->code.empty() && !(shaderStage->module->source.empty()))
+                    {
+                        requiresShaderCompiler = true;
+                    }
                 }
             }
-        }
 
-        if (requiresShaderCompiler)
-        {
-            auto shaderCompiler = context.getOrCreateShaderCompiler();
-            if (shaderCompiler)
+            if (requiresShaderCompiler)
             {
-                shaderCompiler->compile(_shaderStages); // may need to map defines and paths in some fashion
+                auto shaderCompiler = context.getOrCreateShaderCompiler();
+                if (shaderCompiler)
+                {
+                    shaderCompiler->compile(_shaderStages); // may need to map defines and paths in some fashion
+                }
             }
+
+            _pipelineLayout->compile(context);
+
+            for (auto& shaderStage : _shaderStages)
+            {
+                shaderStage->compile(context);
+            }
+
+            _implementation[deviceResource.deviceID] = RayTracingPipeline::Implementation::create(deviceResource.device, *context.scratchMemory, this);
         }
-
-        _pipelineLayout->compile(context);
-
-        for (auto& shaderStage : _shaderStages)
-        {
-            shaderStage->compile(context);
-        }
-
-        _implementation[context.deviceID] = RayTracingPipeline::Implementation::create(context, this);
     }
 }
 
@@ -106,20 +109,19 @@ void RayTracingPipeline::compile(Context& context)
 //
 // RayTracingPipeline::Implementation
 //
-RayTracingPipeline::Implementation::Implementation(Context& context, RayTracingPipeline* rayTracingPipeline) :
-    _device(context.device),
+RayTracingPipeline::Implementation::Implementation(ref_ptr<Device> device, ScratchMemory& scratchMemory, RayTracingPipeline* rayTracingPipeline) :
+    _device(device),
     _pipelineLayout(rayTracingPipeline->getPipelineLayout()),
     _shaderStages(rayTracingPipeline->getShaderStages()),
     _shaderGroups(rayTracingPipeline->getRayTracingShaderGroups())
 {
-
     auto pipelineLayout = rayTracingPipeline->getPipelineLayout();
 
     Extensions* extensions = Extensions::Get(_device, true);
 
     VkRayTracingPipelineCreateInfoKHR pipelineInfo = {};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-    pipelineInfo.layout = pipelineLayout->vk(context.deviceID);
+    pipelineInfo.layout = pipelineLayout->vk(device->deviceID);
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineInfo.pNext = nullptr;
 
@@ -130,7 +132,7 @@ RayTracingPipeline::Implementation::Implementation(Context& context, RayTracingP
     {
         const ShaderStage* shaderStage = shaderStages[i];
         shaderStageCreateInfo[i].pNext = nullptr;
-        shaderStage->apply(context, shaderStageCreateInfo[i]);
+        shaderStage->apply(device->deviceID, scratchMemory, shaderStageCreateInfo[i]);
     }
 
     pipelineInfo.stageCount = static_cast<uint32_t>(shaderStageCreateInfo.size());
@@ -173,7 +175,7 @@ RayTracingPipeline::Implementation::Implementation(Context& context, RayTracingP
 
         for (size_t i = 0; i < rayTracingShaderGroups.size(); ++i)
         {
-            auto memory = bindingTableBuffers[i]->getDeviceMemory(context.deviceID);
+            auto memory = bindingTableBuffers[i]->getDeviceMemory(device->deviceID);
             void* data;
             memory->map(bindingTableBuffers[i]->getMemoryOffset(_device->deviceID), handleSizeAligned, 0, &data);
             memcpy(data, shaderHandleStorage.data() + i * handleSizeAligned, handleSizeAligned);

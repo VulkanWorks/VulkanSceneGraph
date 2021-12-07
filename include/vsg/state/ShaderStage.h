@@ -12,6 +12,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
+#include <vsg/core/ScratchMemory.h>
 #include <vsg/state/ShaderModule.h>
 
 namespace vsg
@@ -43,7 +44,7 @@ namespace vsg
         void read(Input& input) override;
         void write(Output& output) const override;
 
-        void apply(Context& context, VkPipelineShaderStageCreateInfo& stageInfo) const;
+        void apply(uint32_t deviceID, ScratchMemory& scratchMemory, VkPipelineShaderStageCreateInfo& stageInfo) const;
 
         // compile the Vulkan object, context parameter used for Device
         void compile(Context& context);

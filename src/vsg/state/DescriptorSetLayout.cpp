@@ -64,7 +64,10 @@ void DescriptorSetLayout::write(Output& output) const
 
 void DescriptorSetLayout::compile(Context& context)
 {
-    if (!_implementation[context.deviceID]) _implementation[context.deviceID] = DescriptorSetLayout::Implementation::create(context.device, bindings);
+    for(auto& deviceResource : context.deviceResources)
+    {
+        if (!_implementation[deviceResource.deviceID]) _implementation[deviceResource.deviceID] = DescriptorSetLayout::Implementation::create(deviceResource.device, bindings);
+    }
 }
 
 //////////////////////////////////////

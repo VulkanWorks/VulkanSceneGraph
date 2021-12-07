@@ -33,17 +33,16 @@ void DescriptorTexelBufferView::compile(Context& context)
     }
 }
 
-void DescriptorTexelBufferView::assignTo(Context& context, VkWriteDescriptorSet& wds) const
+void DescriptorTexelBufferView::assignTo(uint32_t deviceID, ScratchMemory& scratchMemory, VkWriteDescriptorSet& wds) const
 {
-    Descriptor::assignTo(context, wds);
+    Descriptor::assignTo(deviceID, scratchMemory, wds);
 
-    auto vk_texelBufferViews = context.scratchMemory->allocate<VkBufferView>(texelBufferViews.size());
+    auto vk_texelBufferViews = scratchMemory.allocate<VkBufferView>(texelBufferViews.size());
     wds.descriptorCount = static_cast<uint32_t>(texelBufferViews.size());
     wds.pTexelBufferView = vk_texelBufferViews;
 
     for (size_t i = 0; i < texelBufferViews.size(); ++i)
     {
-        texelBufferViews[i]->compile(context);
-        vk_texelBufferViews[i] = texelBufferViews[i]->vk(context.deviceID);
+        vk_texelBufferViews[i] = texelBufferViews[i]->vk(deviceID);
     }
 }

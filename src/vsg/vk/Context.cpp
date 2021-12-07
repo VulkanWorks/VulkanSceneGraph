@@ -87,30 +87,29 @@ void BuildAccelerationStructureCommand::setScratchBuffer(ref_ptr<Buffer>& scratc
 //
 // vsg::Context
 //
-Context::Context(Device* in_device, const ResourceRequirements& resourceRequirements) :
-    deviceID(in_device->deviceID),
-    device(in_device),
-    deviceMemoryBufferPools(MemoryBufferPools::create("Device_MemoryBufferPool", device, resourceRequirements)),
-    stagingMemoryBufferPools(MemoryBufferPools::create("Staging_MemoryBufferPool", device, resourceRequirements)),
-    scratchBufferSize(0)
+Context::Context(const std::vector<ref_ptr<Device>>& devices, const ResourceRequirements& resourceRequirements) :
+    deviceResources(devices.size())
 {
-    //semaphore = vsg::Semaphore::create(device);
+    for(size_t i = 0; i<devices.size(); ++i)
+    {
+        auto& dr = deviceResources[i];
+        auto& device = devices[i];
+        dr.device = device;
+        dr.deviceID = device->deviceID;
+        dr.deviceMemoryBufferPools = MemoryBufferPools::create("Device_MemoryBufferPool", device, resourceRequirements);
+        dr.stagingMemoryBufferPools = MemoryBufferPools::create("Staging_MemoryBufferPool", device, resourceRequirements);
+        dr.scratchBufferSize = 0;
+    }
+
     scratchMemory = ScratchMemory::create(4096);
 }
 
+Context::Context(Device* device, const ResourceRequirements& resourceRequirements):
+    Context(std::vector<ref_ptr<Device>>{ref_ptr<Device>(device)}, resourceRequirements) {}
+
 Context::Context(const Context& context) :
     Inherit(context),
-    deviceID(context.deviceID),
-    device(context.device),
-    renderPass(context.renderPass),
-    defaultPipelineStates(context.defaultPipelineStates),
-    overridePipelineStates(context.overridePipelineStates),
-    descriptorPool(context.descriptorPool),
-    graphicsQueue(context.graphicsQueue),
-    commandPool(context.commandPool),
-    deviceMemoryBufferPools(context.deviceMemoryBufferPools),
-    stagingMemoryBufferPools(context.stagingMemoryBufferPools),
-    scratchBufferSize(context.scratchBufferSize)
+    deviceResources(context.deviceResources)
 {
     scratchMemory = ScratchMemory::create(4096);
 }
@@ -120,16 +119,6 @@ Context::~Context()
     waitForCompletion();
 }
 
-ref_ptr<CommandBuffer> Context::getOrCreateCommandBuffer()
-{
-    if (!commandBuffer)
-    {
-        commandBuffer = vsg::CommandBuffer::create(device, commandPool);
-    }
-
-    return commandBuffer;
-}
-
 ShaderCompiler* Context::getOrCreateShaderCompiler()
 {
     if (shaderCompiler) return shaderCompiler;
@@ -137,143 +126,195 @@ ShaderCompiler* Context::getOrCreateShaderCompiler()
 #ifdef HAS_GLSLANG
     shaderCompiler = ShaderCompiler::create();
 
-    if (device && device->getInstance())
+    for(auto& deviceResource : deviceResources)
     {
-        shaderCompiler->defaults->vulkanVersion = device->getInstance()->apiVersion;
+        auto& device = deviceResource.device;
+        if (device && device->getInstance())
+        {
+            shaderCompiler->defaults->vulkanVersion = device->getInstance()->apiVersion;
+        }
     }
-
 #endif
 
     return shaderCompiler;
 }
 
+VkDeviceSize Context::unfiformAlignment() const
+{
+    VkDeviceSize alignment = 4;
+    for(auto& deviceResource : deviceResources)
+    {
+        alignment = std::max(alignment, deviceResource.device->getPhysicalDevice()->getProperties().limits.minUniformBufferOffsetAlignment);
+    }
+    return alignment;
+}
+
 void Context::copy(ref_ptr<Data> data, ref_ptr<ImageInfo> dest)
 {
-    if (!copyImageCmd)
+    for(auto& deviceResource : deviceResources)
     {
-        copyImageCmd = CopyAndReleaseImage::create(stagingMemoryBufferPools);
-        commands.push_back(copyImageCmd);
-    }
+        auto& stagingMemoryBufferPools = deviceResource.stagingMemoryBufferPools;
+        auto& copyImageCmd = deviceResource.copyImageCmd;
+        auto& commands = deviceResource.commands;
+        if (!copyImageCmd)
+        {
+            copyImageCmd = CopyAndReleaseImage::create(stagingMemoryBufferPools);
+            commands.push_back(copyImageCmd);
+        }
 
-    copyImageCmd->copy(data, dest);
+        copyImageCmd->copy(data, dest);
+    }
 }
 
 void Context::copy(ref_ptr<Data> data, ref_ptr<ImageInfo> dest, uint32_t numMipMapLevels)
 {
-    if (!copyImageCmd)
+    for(auto& deviceResource : deviceResources)
     {
-        copyImageCmd = CopyAndReleaseImage::create(stagingMemoryBufferPools);
-        commands.push_back(copyImageCmd);
-    }
+        auto& stagingMemoryBufferPools = deviceResource.stagingMemoryBufferPools;
+        auto& copyImageCmd = deviceResource.copyImageCmd;
+        auto& commands = deviceResource.commands;
+        if (!copyImageCmd)
+        {
+            copyImageCmd = CopyAndReleaseImage::create(stagingMemoryBufferPools);
+            commands.push_back(copyImageCmd);
+        }
 
-    copyImageCmd->copy(data, dest, numMipMapLevels);
+        copyImageCmd->copy(data, dest, numMipMapLevels);
+    }
 }
 
 void Context::copy(ref_ptr<BufferInfo> src, ref_ptr<BufferInfo> dest)
 {
-    if (!copyBufferCmd)
+    for(auto& deviceResource : deviceResources)
     {
-        copyBufferCmd = CopyAndReleaseBuffer::create();
-        commands.emplace_back(copyBufferCmd);
-    }
+        auto& stagingMemoryBufferPools = deviceResource.stagingMemoryBufferPools;
+        auto& copyBufferCmd = deviceResource.copyBufferCmd;
+        auto& commands = deviceResource.commands;
+        if (!copyBufferCmd)
+        {
+            copyBufferCmd = CopyAndReleaseBuffer::create(stagingMemoryBufferPools);
+            commands.emplace_back(copyBufferCmd);
+        }
 
-    copyBufferCmd->add(src, dest);
+        copyBufferCmd->add(src, dest);
+    }
 }
 
 bool Context::record()
 {
-    if (commands.empty() && buildAccelerationStructureCommands.empty()) return false;
-
-    //auto before_compile = std::chrono::steady_clock::now();
-
-    if (!fence)
+    for(auto& deviceResource : deviceResources)
     {
-        fence = vsg::Fence::create(device);
-    }
-    else
-    {
-        fence->reset();
-    }
+        auto& device = deviceResource.device;
+        auto& commands = deviceResource.commands;
+        auto& fence = deviceResource.fence;
+        auto& buildAccelerationStructureCommands = deviceResource.buildAccelerationStructureCommands;
+        auto& semaphore = deviceResource.semaphore;
+        auto& graphicsQueue = deviceResource.graphicsQueue;
 
-    getOrCreateCommandBuffer();
+        if (commands.empty() && buildAccelerationStructureCommands.empty()) return false;
 
-    VkCommandBufferBeginInfo beginInfo = {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        //auto before_compile = std::chrono::steady_clock::now();
 
-    vkBeginCommandBuffer(*commandBuffer, &beginInfo);
-
-    // issue commands of interest
-    {
-        for (auto& command : commands) command->record(*commandBuffer);
-    }
-
-    // create scratch buffer and issue build acceleration structure commands
-    ref_ptr<Buffer> scratchBuffer;
-    ref_ptr<DeviceMemory> scratchBufferMemory;
-    if (scratchBufferSize > 0)
-    {
-        scratchBuffer = vsg::createBufferAndMemory(device, scratchBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_SHARING_MODE_EXCLUSIVE, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-        for (auto& command : buildAccelerationStructureCommands)
+        if (!fence)
         {
-            command->setScratchBuffer(scratchBuffer);
-            command->record(*commandBuffer);
+            fence = vsg::Fence::create(device);
         }
+        else
+        {
+            fence->reset();
+        }
+
+        deviceResource.getOrCreateCommandBuffer();
+        auto& commandBuffer = deviceResource.commandBuffer;
+
+        VkCommandBufferBeginInfo beginInfo = {};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        vkBeginCommandBuffer(*commandBuffer, &beginInfo);
+
+        // issue commands of interest
+        {
+            for (auto& command : commands) command->record(*commandBuffer);
+        }
+
+        // create scratch buffer and issue build acceleration structure commands
+        ref_ptr<Buffer> scratchBuffer;
+        ref_ptr<DeviceMemory> scratchBufferMemory;
+        if (scratchBufferSize > 0)
+        {
+            scratchBuffer = vsg::createBufferAndMemory(device, scratchBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_SHARING_MODE_EXCLUSIVE, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+            for (auto& command : buildAccelerationStructureCommands)
+            {
+                command->setScratchBuffer(scratchBuffer);
+                command->record(*commandBuffer);
+            }
+        }
+
+        vkEndCommandBuffer(*commandBuffer);
+
+        VkPipelineStageFlags waitDstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+        VkSubmitInfo submitInfo = {};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = commandBuffer->data();
+        if (semaphore)
+        {
+            submitInfo.signalSemaphoreCount = 1;
+            submitInfo.pSignalSemaphores = semaphore->data();
+            submitInfo.pWaitDstStageMask = &waitDstStageMask;
+        }
+        else
+        {
+            submitInfo.signalSemaphoreCount = 0;
+            submitInfo.pSignalSemaphores = nullptr;
+        }
+
+        graphicsQueue->submit(submitInfo, fence);
     }
-
-    vkEndCommandBuffer(*commandBuffer);
-
-    VkPipelineStageFlags waitDstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-
-    VkSubmitInfo submitInfo = {};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = commandBuffer->data();
-    if (semaphore)
-    {
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = semaphore->data();
-        submitInfo.pWaitDstStageMask = &waitDstStageMask;
-    }
-    else
-    {
-        submitInfo.signalSemaphoreCount = 0;
-        submitInfo.pSignalSemaphores = nullptr;
-    }
-
-    graphicsQueue->submit(submitInfo, fence);
 
     return true;
 }
 
 void Context::waitForCompletion()
 {
-    if (!commandBuffer || !fence)
+    for(auto& deviceResource : deviceResources)
     {
-        return;
+        auto& commands = deviceResource.commands;
+        auto& fence = deviceResource.fence;
+        auto& buildAccelerationStructureCommands = deviceResource.buildAccelerationStructureCommands;
+        auto& commandBuffer = deviceResource.commandBuffer;
+        auto& copyImageCmd = deviceResource.copyImageCmd;
+        auto& copyBufferCmd = deviceResource.copyBufferCmd;
+
+        if (!commandBuffer || !fence)
+        {
+            return;
+        }
+
+        if (commands.empty() && buildAccelerationStructureCommands.empty())
+        {
+            return;
+        }
+
+        // we must wait for the queue to empty before we can safely clean up the commandBuffer
+        uint64_t timeout = 1000000000;
+
+        VkResult result;
+        while ((result = fence->wait(timeout)) == VK_TIMEOUT)
+        {
+            std::cout << "Context::waitForCompletion() " << this << " fence->wait() timed out, trying again." << std::endl;
+        }
+
+        if (result != VK_SUCCESS)
+        {
+            std::cout << "Context::waitForCompletion()  " << this << " fence->wait() failed with error. VkResult = " << result << std::endl;
+        }
+
+        commands.clear();
+        copyImageCmd = nullptr;
+        copyBufferCmd = nullptr;
     }
-
-    if (commands.empty() && buildAccelerationStructureCommands.empty())
-    {
-        return;
-    }
-
-    // we must wait for the queue to empty before we can safely clean up the commandBuffer
-    uint64_t timeout = 1000000000;
-
-    VkResult result;
-    while ((result = fence->wait(timeout)) == VK_TIMEOUT)
-    {
-        std::cout << "Context::waitForCompletion() " << this << " fence->wait() timed out, trying again." << std::endl;
-    }
-
-    if (result != VK_SUCCESS)
-    {
-        std::cout << "Context::waitForCompletion()  " << this << " fence->wait() failed with error. VkResult = " << result << std::endl;
-    }
-
-    commands.clear();
-    copyImageCmd = nullptr;
-    copyBufferCmd = nullptr;
 }

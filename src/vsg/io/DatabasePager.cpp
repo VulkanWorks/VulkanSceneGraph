@@ -239,11 +239,14 @@ void DatabasePager::start()
             compileTraversals.emplace_back(new CompileTraversal(*db_ct));
         }
 
+#if 0
+// TODO need to decide what to do here....
         // assign semaphores
         for (auto& ct : compileTraversals)
         {
             ct->context.semaphore = Semaphore::create(ct->context.device, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
         }
+#endif
 
         auto compile_itr = compileTraversals.begin();
 
@@ -318,11 +321,14 @@ void DatabasePager::start()
                 //std::cout<<"Compile Semaphore after wait Semaphore "<<*(ct->context.semaphore->data())<<" , count "<<ct->context.semaphore->numDependentSubmissions().load()<<std::endl;
 #endif
 
+#if 0
+// TODO need to decide what to do here....
                 while (ct->context.semaphore->numDependentSubmissions().load() > 0)
                 {
                     if (status->cancel()) return;
                     std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 }
+#endif
 
 #if DO_TIMING
                 auto after_wait_and_semaphore = clock::now();
@@ -334,7 +340,10 @@ void DatabasePager::start()
                 std::cout << "Fence + Semaphore wait : " << std::chrono::duration<double, std::chrono::milliseconds::period>(after_wait_and_semaphore - before_wait_for_completion).count() << " average = " << (total_wait_time / num_waits) << std::endl;
 #endif
 
+#if 0
+// TODO need to decide what to do here....
                 ct->context.semaphore->numDependentSubmissions().exchange(1);
+#endif
 
                 DatabaseQueue::Nodes nodesCompiled;
                 for (auto& plod : nodesToCompile)
@@ -403,14 +412,20 @@ void DatabasePager::start()
                     {
                         for (auto& plod : nodesCompiled)
                         {
+#if 0
+// TODO need to decide what to do here....
                             plod->semaphore = ct->context.semaphore;
+#endif
                             plod->requestStatus.exchange(PagedLOD::MergeRequest);
                         }
                         toMergeQueue->add(nodesCompiled);
                     }
                     else
                     {
+#if 0
+// TODO need to decide what to do here....
                         ct->context.semaphore->numDependentSubmissions().exchange(0);
+#endif
                         for (auto& plod : nodesCompiled)
                         {
                             databasePager.requestDiscarded(plod);
@@ -419,7 +434,10 @@ void DatabasePager::start()
                 }
                 else
                 {
+#if 0
+// TODO need to decide what to do here....
                     ct->context.semaphore->numDependentSubmissions().exchange(0);
+#endif
                 }
             }
         }

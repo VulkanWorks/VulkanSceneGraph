@@ -116,7 +116,12 @@ bool Buffer::compile(Device* device)
 
 bool Buffer::compile(Context& context)
 {
-    return compile(context.device);
+    bool result = false;
+    for(auto& deviceResource : context.deviceResources)
+    {
+        result = compile(deviceResource.device) | result;
+    }
+    return result;
 }
 
 ref_ptr<Buffer> vsg::createBufferAndMemory(Device* device, VkDeviceSize size, VkBufferUsageFlags usage, VkSharingMode sharingMode, VkMemoryPropertyFlags memoryProperties)

@@ -67,30 +67,33 @@ void Sampler::write(Output& output) const
 
 void Sampler::compile(Context& context)
 {
-    if (_implementation[context.deviceID]) return;
+    for(auto& deviceResource : context.deviceResources)
+    {
+        if (_implementation[deviceResource.deviceID]) continue;
 
-    auto samplerInfo = context.scratchMemory->allocate<VkSamplerCreateInfo>();
+        auto samplerInfo = context.scratchMemory->allocate<VkSamplerCreateInfo>();
 
-    samplerInfo->sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerInfo->pNext = nullptr;
-    samplerInfo->flags = flags;
-    samplerInfo->magFilter = magFilter;
-    samplerInfo->minFilter = minFilter;
-    samplerInfo->mipmapMode = mipmapMode;
-    samplerInfo->addressModeU = addressModeU;
-    samplerInfo->addressModeV = addressModeV;
-    samplerInfo->addressModeW = addressModeW;
-    samplerInfo->mipLodBias = mipLodBias;
-    samplerInfo->anisotropyEnable = anisotropyEnable;
-    samplerInfo->maxAnisotropy = maxAnisotropy;
-    samplerInfo->compareEnable = compareEnable;
-    samplerInfo->compareOp = compareOp;
-    samplerInfo->minLod = minLod;
-    samplerInfo->maxLod = maxLod;
-    samplerInfo->borderColor = borderColor;
-    samplerInfo->unnormalizedCoordinates = unnormalizedCoordinates;
+        samplerInfo->sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        samplerInfo->pNext = nullptr;
+        samplerInfo->flags = flags;
+        samplerInfo->magFilter = magFilter;
+        samplerInfo->minFilter = minFilter;
+        samplerInfo->mipmapMode = mipmapMode;
+        samplerInfo->addressModeU = addressModeU;
+        samplerInfo->addressModeV = addressModeV;
+        samplerInfo->addressModeW = addressModeW;
+        samplerInfo->mipLodBias = mipLodBias;
+        samplerInfo->anisotropyEnable = anisotropyEnable;
+        samplerInfo->maxAnisotropy = maxAnisotropy;
+        samplerInfo->compareEnable = compareEnable;
+        samplerInfo->compareOp = compareOp;
+        samplerInfo->minLod = minLod;
+        samplerInfo->maxLod = maxLod;
+        samplerInfo->borderColor = borderColor;
+        samplerInfo->unnormalizedCoordinates = unnormalizedCoordinates;
 
-    _implementation[context.deviceID] = Implementation::create(context.device, *samplerInfo);
+        _implementation[deviceResource.deviceID] = Implementation::create(deviceResource.device, *samplerInfo);
+    }
 }
 
 Sampler::Implementation::Implementation(Device* device, const VkSamplerCreateInfo& createSamplerInfo) :

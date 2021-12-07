@@ -54,6 +54,8 @@ void AccelerationGeometry::compile(Context& context)
     DataList indexDataList;
     indexDataList.push_back(indices);
 
+#if 0
+// TODO need to decide what to do here....
 #if TRANSFER_BUFFERS
     auto vertexBufferInfo = vsg::createBufferAndTransferData(context, vertexDataList, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE);
     auto indexBufferInfo = vsg::createBufferAndTransferData(context, indexDataList, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE);
@@ -90,4 +92,5 @@ void AccelerationGeometry::compile(Context& context)
     _geometry.geometry.triangles.pNext = nullptr;
     _geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
     _geometry.pNext = nullptr;
+#endif
 }

@@ -100,49 +100,58 @@ void GraphicsPipeline::write(Output& output) const
 
 void GraphicsPipeline::compile(Context& context)
 {
-    uint32_t viewID = context.viewID;
-    if (static_cast<uint32_t>(_implementation.size()) < (viewID + 1))
+    // compile shaders if required
+    bool requiresShaderCompiler = false;
+    for (auto& shaderStage : stages)
     {
-        _implementation.resize(viewID + 1);
+        if (shaderStage->module)
+        {
+            if (shaderStage->module->code.empty() && !(shaderStage->module->source.empty()))
+            {
+                requiresShaderCompiler = true;
+            }
+        }
     }
 
-    if (!_implementation[viewID])
+    if (requiresShaderCompiler)
     {
-        // compile shaders if required
-        bool requiresShaderCompiler = false;
-        for (auto& shaderStage : stages)
+        auto shaderCompiler = context.getOrCreateShaderCompiler();
+        if (shaderCompiler)
         {
-            if (shaderStage->module)
-            {
-                if (shaderStage->module->code.empty() && !(shaderStage->module->source.empty()))
-                {
-                    requiresShaderCompiler = true;
-                }
-            }
+            shaderCompiler->compile(stages); // may need to map defines and paths in some fashion
         }
+    }
 
-        if (requiresShaderCompiler)
+    // compile Vulkan objects
+    layout->compile(context);
+
+    for (auto& shaderStage : stages)
+    {
+        shaderStage->compile(context);
+    }
+
+    uint32_t maxViewID = 0;
+    for(auto& deviceResource : context.deviceResources)
+    {
+        if (deviceResource.viewID > maxViewID) maxViewID = deviceResource.viewID;
+    }
+
+    if (static_cast<uint32_t>(_implementation.size()) >  (maxViewID + 1))
+    {
+        _implementation.resize(maxViewID + 1);
+    }
+
+    for(auto& deviceResource : context.deviceResources)
+    {
+        uint32_t viewID = deviceResource.viewID;
+        if (!_implementation[viewID])
         {
-            auto shaderCompiler = context.getOrCreateShaderCompiler();
-            if (shaderCompiler)
-            {
-                shaderCompiler->compile(stages); // may need to map defines and paths in some fashion
-            }
+            GraphicsPipelineStates combined_pipelineStates = context.defaultPipelineStates;
+            combined_pipelineStates.insert(combined_pipelineStates.end(), pipelineStates.begin(), pipelineStates.end());
+            combined_pipelineStates.insert(combined_pipelineStates.end(), context.overridePipelineStates.begin(), context.overridePipelineStates.end());
+
+            _implementation[viewID] = GraphicsPipeline::Implementation::create(context, deviceResource.device, deviceResource.renderPass, layout, stages, combined_pipelineStates, subpass);
         }
-
-        // compile Vulkan objects
-        layout->compile(context);
-
-        for (auto& shaderStage : stages)
-        {
-            shaderStage->compile(context);
-        }
-
-        GraphicsPipelineStates combined_pipelineStates = context.defaultPipelineStates;
-        combined_pipelineStates.insert(combined_pipelineStates.end(), pipelineStates.begin(), pipelineStates.end());
-        combined_pipelineStates.insert(combined_pipelineStates.end(), context.overridePipelineStates.begin(), context.overridePipelineStates.end());
-
-        _implementation[viewID] = GraphicsPipeline::Implementation::create(context, context.device, context.renderPass, layout, stages, combined_pipelineStates, subpass);
     }
 }
 
@@ -167,7 +176,7 @@ GraphicsPipeline::Implementation::Implementation(Context& context, Device* devic
         const ShaderStage* shaderStage = shaderStages[i];
         shaderStageCreateInfo[i].flags = 0;
         shaderStageCreateInfo[i].pNext = nullptr;
-        shaderStage->apply(context, shaderStageCreateInfo[i]);
+        shaderStage->apply(device->deviceID, *context.scratchMemory, shaderStageCreateInfo[i]);
     }
 
     pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());

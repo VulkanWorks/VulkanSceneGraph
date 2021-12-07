@@ -70,23 +70,27 @@ void ComputePipeline::write(Output& output) const
 
 void ComputePipeline::compile(Context& context)
 {
-    if (!_implementation[context.deviceID])
+    layout->compile(context);
+    stage->compile(context);
+
+    for(auto& deviceResource : context.deviceResources)
     {
-        // compile shaders if required
-        bool requiresShaderCompiler = stage && stage->module && stage->module->code.empty() && !(stage->module->source.empty());
-
-        if (requiresShaderCompiler)
+        if (!_implementation[deviceResource.deviceID])
         {
-            auto shaderCompiler = context.getOrCreateShaderCompiler();
-            if (shaderCompiler)
-            {
-                shaderCompiler->compile(stage); // may need to map defines and paths in some fashion
-            }
-        }
+            // compile shaders if required
+            bool requiresShaderCompiler = stage && stage->module && stage->module->code.empty() && !(stage->module->source.empty());
 
-        layout->compile(context);
-        stage->compile(context);
-        _implementation[context.deviceID] = ComputePipeline::Implementation::create(context, context.device, layout, stage);
+            if (requiresShaderCompiler)
+            {
+                auto shaderCompiler = context.getOrCreateShaderCompiler();
+                if (shaderCompiler)
+                {
+                    shaderCompiler->compile(stage); // may need to map defines and paths in some fashion
+                }
+            }
+
+            _implementation[deviceResource.deviceID] = ComputePipeline::Implementation::create(context, deviceResource.device, layout, stage);
+        }
     }
 }
 
@@ -99,7 +103,7 @@ ComputePipeline::Implementation::Implementation(Context& context, Device* device
 {
     VkPipelineShaderStageCreateInfo stageInfo = {};
     stageInfo.pNext = nullptr;
-    shaderStage->apply(context, stageInfo);
+    shaderStage->apply(device->deviceID, *context.scratchMemory, stageInfo);
 
     VkComputePipelineCreateInfo pipelineInfo = {};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;

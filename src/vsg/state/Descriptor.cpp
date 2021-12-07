@@ -56,7 +56,7 @@ void Descriptor::write(Output& output) const
     }
 }
 
-void Descriptor::assignTo(Context& /*context*/, VkWriteDescriptorSet& wds) const
+void Descriptor::assignTo(uint32_t /*deviceID*/, ScratchMemory& /*scratchMemory*/, VkWriteDescriptorSet& wds) const
 {
     wds = {};
     wds.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

@@ -106,26 +106,22 @@ void DescriptorImage::compile(Context& context)
             auto& imageView = *imageInfo->imageView;
             imageView.compile(context);
 
-            if (imageView.image)
+            auto& image = imageView.image;
+            if (image && image->data && image->requiresCopy)
             {
-                auto& image = *imageView.image;
-                auto& requiresDataCopy = image.requiresDataCopy(context.deviceID);
-                if (requiresDataCopy && image.data)
-                {
-                    context.copy(image.data, imageInfo, image.mipLevels);
-                    requiresDataCopy = false;
-                }
+                context.copy(image->data, imageInfo, image->mipLevels);
+                image->requiresCopy = false;
             }
         }
     }
 }
 
-void DescriptorImage::assignTo(Context& context, VkWriteDescriptorSet& wds) const
+void DescriptorImage::assignTo(uint32_t deviceID, ScratchMemory& scratchMemory, VkWriteDescriptorSet& wds) const
 {
-    Descriptor::assignTo(context, wds);
+    Descriptor::assignTo(deviceID, scratchMemory, wds);
 
     // convert from VSG to Vk
-    auto pImageInfo = context.scratchMemory->allocate<VkDescriptorImageInfo>(imageInfoList.size());
+    auto pImageInfo = scratchMemory.allocate<VkDescriptorImageInfo>(imageInfoList.size());
     wds.descriptorCount = static_cast<uint32_t>(imageInfoList.size());
     wds.pImageInfo = pImageInfo;
     for (size_t i = 0; i < imageInfoList.size(); ++i)
@@ -134,12 +130,12 @@ void DescriptorImage::assignTo(Context& context, VkWriteDescriptorSet& wds) cons
 
         VkDescriptorImageInfo& info = pImageInfo[i];
         if (imageInfo->sampler)
-            info.sampler = imageInfo->sampler->vk(context.deviceID);
+            info.sampler = imageInfo->sampler->vk(deviceID);
         else
             info.sampler = 0;
 
         if (imageInfo->imageView)
-            info.imageView = imageInfo->imageView->vk(context.deviceID);
+            info.imageView = imageInfo->imageView->vk(deviceID);
         else
             info.imageView = 0;
 

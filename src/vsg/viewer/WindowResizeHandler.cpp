@@ -49,10 +49,13 @@ void WindowResizeHandler::apply(vsg::BindGraphicsPipeline& bindPipeline)
 {
     GraphicsPipeline* graphicsPipeline = bindPipeline.pipeline;
 
+#if 0
+// TODO need to decide what to do here....
     if (!visit(graphicsPipeline, context->viewID))
     {
         return;
     }
+#endif
 
     if (graphicsPipeline)
     {
@@ -73,8 +76,11 @@ void WindowResizeHandler::apply(vsg::BindGraphicsPipeline& bindPipeline)
         bool needToRegenerateGraphicsPipeline = !containsViewport(*graphicsPipeline);
         if (needToRegenerateGraphicsPipeline)
         {
+#if 0
+// TODO need to decide what to do here....
             graphicsPipeline->release(context->viewID);
             graphicsPipeline->compile(*context);
+#endif
         }
     }
 }
@@ -86,7 +92,10 @@ void WindowResizeHandler::apply(vsg::Object& object)
 
 void WindowResizeHandler::apply(vsg::StateGroup& sg)
 {
+#if 0
+// TODO need to decide what to do here....
     if (!visit(&sg, context->viewID)) return;
+#endif
 
     for (auto& command : sg.stateCommands)
     {
@@ -110,7 +119,10 @@ void WindowResizeHandler::apply(vsg::View& view)
 {
     if (!visit(&view)) return;
 
+#if 0
+// TODO need to decide what to do here....
     context->viewID = view.viewID;
+#endif
 
     if (!view.camera)
     {

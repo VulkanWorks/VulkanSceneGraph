@@ -37,22 +37,30 @@ using namespace vsg;
 CompileTraversal::CompileTraversal(ref_ptr<Device> in_device, const ResourceRequirements& resourceRequirements) :
     context(in_device, resourceRequirements)
 {
-    auto queueFamily = in_device->getPhysicalDevice()->getQueueFamily(VK_QUEUE_GRAPHICS_BIT);
-    context.commandPool = vsg::CommandPool::create(in_device, queueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    context.graphicsQueue = in_device->getQueue(queueFamily);
+    // TODO move to Context?
+    for(auto& deviceResource : context.deviceResources)
+    {
+        auto queueFamily = deviceResource.device->getPhysicalDevice()->getQueueFamily(VK_QUEUE_GRAPHICS_BIT);
+        deviceResource.commandPool = vsg::CommandPool::create(deviceResource.device, queueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+        deviceResource.graphicsQueue = deviceResource.device->getQueue(queueFamily);
+    }
 }
 
 CompileTraversal::CompileTraversal(ref_ptr<Window> window, ref_ptr<ViewportState> viewport, const ResourceRequirements& resourceRequirements) :
     context(window->getOrCreateDevice(), resourceRequirements)
 {
-    auto device = window->getDevice();
-    auto queueFamily = device->getPhysicalDevice()->getQueueFamily(VK_QUEUE_GRAPHICS_BIT);
-    context.renderPass = window->getOrCreateRenderPass();
-    context.commandPool = vsg::CommandPool::create(device, queueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    context.graphicsQueue = device->getQueue(queueFamily);
+    // TODO move to Context?
+    for(auto& deviceResource : context.deviceResources)
+    {
+        auto device = window->getDevice();
+        auto queueFamily = device->getPhysicalDevice()->getQueueFamily(VK_QUEUE_GRAPHICS_BIT);
+        deviceResource.renderPass = window->getOrCreateRenderPass();
+        deviceResource.commandPool = vsg::CommandPool::create(device, queueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+        deviceResource.graphicsQueue = device->getQueue(queueFamily);
 
-    if (viewport) context.defaultPipelineStates.emplace_back(viewport);
-    if (window->framebufferSamples() != VK_SAMPLE_COUNT_1_BIT) context.overridePipelineStates.emplace_back(vsg::MultisampleState::create(window->framebufferSamples()));
+        if (viewport) context.defaultPipelineStates.emplace_back(viewport);
+        if (window->framebufferSamples() != VK_SAMPLE_COUNT_1_BIT) context.overridePipelineStates.emplace_back(vsg::MultisampleState::create(window->framebufferSamples()));
+    }
 }
 
 CompileTraversal::CompileTraversal(const CompileTraversal& ct) :
@@ -92,6 +100,8 @@ void CompileTraversal::apply(Geometry& geometry)
     geometry.traverse(*this);
 }
 
+#if 0
+// TODO need to decide what to do here....
 void CompileTraversal::apply(CommandGraph& commandGraph)
 {
     if (commandGraph.window)
@@ -122,6 +132,7 @@ void CompileTraversal::apply(CommandGraph& commandGraph)
     }
 }
 
+// TODO need to decide what to do here....
 void CompileTraversal::apply(RenderGraph& renderGraph)
 {
     context.renderPass = renderGraph.getRenderPass();
@@ -153,6 +164,7 @@ void CompileTraversal::apply(RenderGraph& renderGraph)
     context.overridePipelineStates = previousOverridePipelineStates;
 }
 
+// TODO need to decide what to do here....
 void CompileTraversal::apply(View& view)
 {
     context.viewID = view.viewID;
@@ -170,3 +182,4 @@ void CompileTraversal::apply(View& view)
         view.traverse(*this);
     }
 }
+#endif

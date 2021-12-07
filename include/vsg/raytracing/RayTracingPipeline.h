@@ -56,7 +56,7 @@ namespace vsg
 
         struct Implementation : public Inherit<Object, Implementation>
         {
-            Implementation(Context& context, RayTracingPipeline* rayTracingPipeline);
+            Implementation(ref_ptr<Device> device, ScratchMemory& scratchMemory, RayTracingPipeline* rayTracingPipeline);
             virtual ~Implementation();
 
             VkPipeline _pipeline;

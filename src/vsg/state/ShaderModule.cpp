@@ -119,7 +119,10 @@ void ShaderModule::write(Output& output) const
 
 void ShaderModule::compile(Context& context)
 {
-    if (!_implementation[context.deviceID]) _implementation[context.deviceID] = Implementation::create(context.device, this);
+    for(auto& deviceResource : context.deviceResources)
+    {
+        if (!_implementation[deviceResource.deviceID]) _implementation[deviceResource.deviceID] = Implementation::create(deviceResource.device, this);
+    }
 }
 
 ShaderModule::Implementation::Implementation(Device* device, ShaderModule* shaderModule) :

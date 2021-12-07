@@ -21,6 +21,7 @@ namespace vsg
     /** Lightweight allocator for temporary memory such as C structures allocated for Vulkan calls that don't require destruction.*/
     struct ScratchMemory : public Inherit<Object, ScratchMemory>
     {
+        uint32_t deviceID = 0;
         uint8_t* buffer = nullptr;
         uint8_t* ptr = nullptr;
         size_t size = 0;

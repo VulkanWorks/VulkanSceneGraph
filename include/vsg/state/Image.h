@@ -44,6 +44,9 @@ namespace vsg
         std::vector<uint32_t> queueFamilyIndices;
         VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
+        /// signal that the data needs to be copied to the vkImage on the GPU.
+        bool requiresCopy = true;
+
         /// Vulkan VkImage handle
         VkImage vk(uint32_t deviceID) const { return _vulkanData[deviceID].image; }
 
@@ -56,7 +59,6 @@ namespace vsg
 
         VkResult bind(DeviceMemory* deviceMemory, VkDeviceSize memoryOffset);
 
-        bool& requiresDataCopy(uint32_t deviceID) { return _vulkanData[deviceID].requiresDataCopy; }
 
         virtual void compile(Device* device);
         virtual void compile(Context& context);
@@ -71,7 +73,6 @@ namespace vsg
             VkDeviceSize memoryOffset = 0;
             VkDeviceSize size = 0;
             ref_ptr<Device> device;
-            bool requiresDataCopy = false;
 
             void release();
         };

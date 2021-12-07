@@ -101,22 +101,25 @@ void Geometry::compile(Context& context)
         command->compile(context);
     }
 
-    auto& vkd = _vulkanData[context.deviceID];
-    vkd = {};
-
-    BufferInfoList combinedBufferInfos(arrays);
-    if (indices)
+    for(auto& deviceResource : context.deviceResources)
     {
-        combinedBufferInfos.push_back(indices);
-        indexType = computeIndexType(indices->data);
-    }
+        auto& vkd = _vulkanData[deviceResource.deviceID];
+        vkd = {};
 
-    if (createBufferAndTransferData(context, combinedBufferInfos, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE))
-    {
-        for (auto& bufferInfo : arrays)
+        BufferInfoList combinedBufferInfos(arrays);
+        if (indices)
         {
-            vkd.vkBuffers.push_back(bufferInfo->buffer->vk(context.deviceID));
-            vkd.offsets.push_back(bufferInfo->offset);
+            combinedBufferInfos.push_back(indices);
+            indexType = computeIndexType(indices->data);
+        }
+
+        if (createBufferAndTransferData(context, combinedBufferInfos, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE))
+        {
+            for (auto& bufferInfo : arrays)
+            {
+                vkd.vkBuffers.push_back(bufferInfo->buffer->vk(deviceResource.deviceID));
+                vkd.offsets.push_back(bufferInfo->offset);
+            }
         }
     }
 }

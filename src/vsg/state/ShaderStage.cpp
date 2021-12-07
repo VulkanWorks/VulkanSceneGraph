@@ -153,11 +153,11 @@ void ShaderStage::write(Output& output) const
     }
 }
 
-void ShaderStage::apply(Context& context, VkPipelineShaderStageCreateInfo& stageInfo) const
+void ShaderStage::apply(uint32_t deviceID, ScratchMemory& scratchMemory, VkPipelineShaderStageCreateInfo& stageInfo) const
 {
     stageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     stageInfo.stage = stage;
-    stageInfo.module = module->vk(context.deviceID);
+    stageInfo.module = module->vk(deviceID);
     stageInfo.pName = entryPointName.c_str();
 
     if (specializationConstants.empty())
@@ -173,8 +173,8 @@ void ShaderStage::apply(Context& context, VkPipelineShaderStageCreateInfo& stage
         }
 
         // allocate temporary memory to pack the specialization map and data into.
-        auto mapEntries = context.scratchMemory->allocate<VkSpecializationMapEntry>(specializationConstants.size());
-        auto packedData = context.scratchMemory->allocate<uint8_t>(packedDataSize);
+        auto mapEntries = scratchMemory.allocate<VkSpecializationMapEntry>(specializationConstants.size());
+        auto packedData = scratchMemory.allocate<uint8_t>(packedDataSize);
         uint32_t offset = 0;
         uint32_t i = 0;
         for (auto& [id, data] : specializationConstants)
@@ -184,7 +184,7 @@ void ShaderStage::apply(Context& context, VkPipelineShaderStageCreateInfo& stage
             offset += static_cast<uint32_t>(data->dataSize());
         }
 
-        auto specializationInfo = context.scratchMemory->allocate<VkSpecializationInfo>(1);
+        auto specializationInfo = scratchMemory.allocate<VkSpecializationInfo>(1);
 
         stageInfo.pSpecializationInfo = specializationInfo;
 

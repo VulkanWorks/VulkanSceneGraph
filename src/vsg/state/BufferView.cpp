@@ -66,5 +66,8 @@ void BufferView::compile(Context& context)
 {
     buffer->compile(context);
 
-    compile(context.device);
+    for(auto& deviceResource : context.deviceResources)
+    {
+        compile(deviceResource.device);
+    }
 }

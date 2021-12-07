@@ -96,7 +96,7 @@ void DescriptorBuffer::compile(Context& context)
     if (requiresAssingmentOfBuffers)
     {
         VkDeviceSize alignment = 4;
-        if (bufferUsageFlags == VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) alignment = context.device->getPhysicalDevice()->getProperties().limits.minUniformBufferOffsetAlignment;
+        if (bufferUsageFlags == VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) alignment = context.unfiformAlignment();
 
         VkDeviceSize totalSize = 0;
         VkDeviceSize offset = 0;
@@ -124,15 +124,16 @@ void DescriptorBuffer::compile(Context& context)
     bool needToCopyDataToBuffer = false;
     for (auto& bufferInfo : bufferInfoList)
     {
-        if (bufferInfo->buffer->compile(context.device))
+        if (bufferInfo->buffer->compile(context))
         {
+#if 0
             if (bufferInfo->buffer->getDeviceMemory(context.deviceID) == nullptr)
             {
                 auto memRequirements = bufferInfo->buffer->getMemoryRequirements(context.deviceID);
                 auto memory = vsg::DeviceMemory::create(context.device, memRequirements, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
                 bufferInfo->buffer->bind(memory, 0);
             }
-
+#endif
             needToCopyDataToBuffer = true;
         }
     }
@@ -141,16 +142,16 @@ void DescriptorBuffer::compile(Context& context)
     {
         for (auto& bufferInfo : bufferInfoList)
         {
-            bufferInfo->copyDataToBuffer(context.deviceID);
+            bufferInfo->copyDataToBuffer();
         }
     }
 }
 
-void DescriptorBuffer::assignTo(Context& context, VkWriteDescriptorSet& wds) const
+void DescriptorBuffer::assignTo(uint32_t deviceID, ScratchMemory& scratchMemory, VkWriteDescriptorSet& wds) const
 {
-    Descriptor::assignTo(context, wds);
+    Descriptor::assignTo(deviceID, scratchMemory, wds);
 
-    auto pBufferInfo = context.scratchMemory->allocate<VkDescriptorBufferInfo>(bufferInfoList.size());
+    auto pBufferInfo = scratchMemory.allocate<VkDescriptorBufferInfo>(bufferInfoList.size());
     wds.descriptorCount = static_cast<uint32_t>(bufferInfoList.size());
     wds.pBufferInfo = pBufferInfo;
 
@@ -159,7 +160,7 @@ void DescriptorBuffer::assignTo(Context& context, VkWriteDescriptorSet& wds) con
     {
         auto& data = bufferInfoList[i];
         VkDescriptorBufferInfo& info = pBufferInfo[i];
-        info.buffer = data->buffer->vk(context.deviceID);
+        info.buffer = data->buffer->vk(deviceID);
         info.offset = data->offset;
         info.range = data->range;
     }

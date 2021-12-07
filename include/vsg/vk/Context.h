@@ -64,22 +64,14 @@ namespace vsg
 
         explicit Context(Device* in_device, const ResourceRequirements& resourceRequirements = {});
 
+        explicit Context(const std::vector<ref_ptr<Device>>& devices, const ResourceRequirements& resourceRequirements = {});
+
         Context(const Context& context);
 
         virtual ~Context();
 
-        const uint32_t deviceID = 0;
-        ref_ptr<Device> device;
-
-        uint32_t viewID = 0;
-
-        // get existing ShaderCompile or create a new one when GLSLang is supported
-        ShaderCompiler* getOrCreateShaderCompiler();
-
-        ref_ptr<CommandBuffer> getOrCreateCommandBuffer();
-
-        // used by GraphicsPipeline.cpp
-        ref_ptr<RenderPass> renderPass;
+        // RTX ray tracing
+        VkDeviceSize scratchBufferSize  = 0;
 
         // pipeline states that are usually not set in a scene, e.g.,
         // the viewport state, but might be set for some uses
@@ -93,27 +85,20 @@ namespace vsg
         // the scene graph .
         GraphicsPipelineStates overridePipelineStates;
 
-        // DescriptorPool
-        ref_ptr<DescriptorPool> descriptorPool;
+        ref_ptr<CommandBuffer> getOrCreateCommandBuffer();
 
         // ShaderCompiler
         ref_ptr<ShaderCompiler> shaderCompiler;
 
-        // transfer data settings
-        ref_ptr<Queue> graphicsQueue;
-        ref_ptr<CommandPool> commandPool;
-        ref_ptr<CommandBuffer> commandBuffer;
-        ref_ptr<Fence> fence;
-        ref_ptr<Semaphore> semaphore;
-        ref_ptr<ScratchMemory> scratchMemory;
+        // get existing ShaderCompile or create a new one when GLSLang is supported
+        ShaderCompiler* getOrCreateShaderCompiler();
 
-        std::vector<ref_ptr<Command>> commands;
+        // query all the devices to find the maximum uniform alignment
+        VkDeviceSize unfiformAlignment() const;
 
-        ref_ptr<CopyAndReleaseImage> copyImageCmd;
         void copy(ref_ptr<Data> data, ref_ptr<ImageInfo> dest);
         void copy(ref_ptr<Data> data, ref_ptr<ImageInfo> dest, uint32_t numMipMapLevels);
 
-        ref_ptr<CopyAndReleaseBuffer> copyBufferCmd;
         void copy(ref_ptr<BufferInfo> src, ref_ptr<BufferInfo> dest);
 
         /// return true if there are commands that have been submitted
@@ -121,12 +106,67 @@ namespace vsg
 
         void waitForCompletion();
 
-        ref_ptr<MemoryBufferPools> deviceMemoryBufferPools;
-        ref_ptr<MemoryBufferPools> stagingMemoryBufferPools;
+        ref_ptr<ScratchMemory> scratchMemory;
 
-        // RTX ray tracing
-        VkDeviceSize scratchBufferSize;
-        std::vector<ref_ptr<BuildAccelerationStructureCommand>> buildAccelerationStructureCommands;
+        // per Device objects
+        struct DeviceResources
+        {
+#if 0
+    deviceID(context.deviceID),
+    device(context.device),
+    renderPass(context.renderPass),
+    defaultPipelineStates(context.defaultPipelineStates),
+    overridePipelineStates(context.overridePipelineStates),
+    descriptorPool(context.descriptorPool),
+    graphicsQueue(context.graphicsQueue),
+    commandPool(context.commandPool),
+    deviceMemoryBufferPools(context.deviceMemoryBufferPools),
+    stagingMemoryBufferPools(context.stagingMemoryBufferPools),
+    scratchBufferSize(context.scratchBufferSize)
+#endif
+            ref_ptr<CommandBuffer> getOrCreateCommandBuffer()
+            {
+                if (!commandBuffer)
+                {
+                    commandBuffer = vsg::CommandBuffer::create(device, commandPool);
+                }
+
+                return commandBuffer;
+            }
+
+            // DescriptorPool
+            ref_ptr<DescriptorPool> descriptorPool;
+
+            uint32_t deviceID = 0;
+            ref_ptr<Device> device;
+
+            uint32_t viewID = 0;
+
+            // used by GraphicsPipeline.cpp
+            ref_ptr<RenderPass> renderPass;
+
+            // transfer data settings
+            ref_ptr<Queue> graphicsQueue;
+            ref_ptr<CommandPool> commandPool;
+            ref_ptr<CommandBuffer> commandBuffer;
+            ref_ptr<Fence> fence;
+            ref_ptr<Semaphore> semaphore;
+
+            std::vector<ref_ptr<Command>> commands;
+
+            ref_ptr<CopyAndReleaseImage> copyImageCmd;
+            ref_ptr<CopyAndReleaseBuffer> copyBufferCmd;
+
+            ref_ptr<MemoryBufferPools> deviceMemoryBufferPools;
+            ref_ptr<MemoryBufferPools> stagingMemoryBufferPools;
+
+            // RTX ray tracing
+            VkDeviceSize scratchBufferSize;
+            std::vector<ref_ptr<BuildAccelerationStructureCommand>> buildAccelerationStructureCommands;
+        };
+
+        std::vector<DeviceResources> deviceResources;
+
     };
     VSG_type_name(vsg::Context);
 

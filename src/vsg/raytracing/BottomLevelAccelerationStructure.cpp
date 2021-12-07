@@ -47,5 +47,8 @@ void BottomLevelAccelerationStructure::compile(Context& context)
 
     Inherit::compile(context);
 
+#if 0
+// TODO need to decide what to do here....
     context.buildAccelerationStructureCommands.push_back(BuildAccelerationStructureCommand::create(context.device, _accelerationStructureBuildGeometryInfo, _accelerationStructure, _geometryPrimitiveCounts, context.getAllocator()));
+#endif
 }

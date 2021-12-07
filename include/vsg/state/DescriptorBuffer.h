@@ -34,7 +34,7 @@ namespace vsg
 
         void compile(Context& context) override;
 
-        void assignTo(Context& context, VkWriteDescriptorSet& wds) const override;
+        void assignTo(uint32_t deviceID, ScratchMemory& scratchMemory, VkWriteDescriptorSet& wds) const override;
 
         uint32_t getNumDescriptors() const override;
 

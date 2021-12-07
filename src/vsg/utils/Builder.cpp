@@ -40,7 +40,10 @@ void Builder::setup(ref_ptr<Window> window, ref_ptr<ViewportState> viewport, uin
         VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, maxNumTextures},
         VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxNumMaterials}};
 
+#if 0
+// TODO need to decide what to do here....
     _compile->context.descriptorPool = DescriptorPool::create(device, maxSets, descriptorPoolSizes);
+#endif
 
     _allocatedTextureCount = 0;
     _maxNumTextures = maxNumTextures;

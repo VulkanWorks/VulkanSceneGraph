@@ -52,12 +52,12 @@ void DescriptorAccelerationStructure::compile(Context& context)
     }
 }
 
-void DescriptorAccelerationStructure::assignTo(Context& context, VkWriteDescriptorSet& wds) const
+void DescriptorAccelerationStructure::assignTo(uint32_t deviceID, ScratchMemory& scratchMemory, VkWriteDescriptorSet& wds) const
 {
     // TODO HERE
-    Descriptor::assignTo(context, wds);
+    Descriptor::assignTo(deviceID, scratchMemory, wds);
 
-    auto descriptorAccelerationStructureInfo = context.scratchMemory->allocate<VkWriteDescriptorSetAccelerationStructureKHR>(1);
+    auto descriptorAccelerationStructureInfo = scratchMemory.allocate<VkWriteDescriptorSetAccelerationStructureKHR>(1);
     descriptorAccelerationStructureInfo->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
     descriptorAccelerationStructureInfo->accelerationStructureCount = static_cast<uint32_t>(_vkAccelerationStructures.size());
     descriptorAccelerationStructureInfo->pAccelerationStructures = _vkAccelerationStructures.data();

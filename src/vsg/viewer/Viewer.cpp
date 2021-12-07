@@ -251,10 +251,13 @@ void Viewer::compile(ref_ptr<ResourceHints> hints)
 
         deviceResource.compile = CompileTraversal::create(device, resourceRequirements);
         deviceResource.compile->overrideMask = 0xffffffff;
+#if 0
+// TODO need to decide what to do here....
         deviceResource.compile->context.commandPool = vsg::CommandPool::create(device, queueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
         deviceResource.compile->context.graphicsQueue = device->getQueue(queueFamily);
 
         if (descriptorPoolSizes.size() > 0) deviceResource.compile->context.descriptorPool = vsg::DescriptorPool::create(device, maxSets, descriptorPoolSizes);
+#endif
     }
 
     // assign the viewID's to each View

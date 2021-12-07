@@ -58,8 +58,10 @@ namespace vsg
 
     using ImageViews = std::vector<ref_ptr<ImageView>>;
 
+#if 0
     /// convenience function that create an ImageView and allocates device memory and an Image for it. For device memory allocation the Context's DeviceMemoryPools are utilized.
     extern VSG_DECLSPEC ref_ptr<ImageView> createImageView(Context& context, ref_ptr<Image> image, VkImageAspectFlags aspectFlags);
+#endif
 
     /// convenience function that create an ImageView and allocates device memory and an Image for it.
     extern VSG_DECLSPEC ref_ptr<ImageView> createImageView(Device* device, ref_ptr<Image> image, VkImageAspectFlags aspectFlags);

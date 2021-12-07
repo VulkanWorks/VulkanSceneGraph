@@ -105,6 +105,7 @@ void BufferInfo::copyDataToBuffer(uint32_t deviceID)
     }
 }
 
+#if 0
 /////////////////////////////////////////////////////////////////////////////////////////
 //
 // vsg::copyDataToStagingBuffer
@@ -141,7 +142,6 @@ ref_ptr<BufferInfo> vsg::copyDataToStagingBuffer(Context& context, const Data* d
 bool vsg::createBufferAndTransferData(Context& context, const BufferInfoList& bufferInfoList, VkBufferUsageFlags usage, VkSharingMode sharingMode)
 {
     //std::cout<<"vsg::createBufferAndTransferData(.., )"<<std::endl;
-
     Device* device = context.device;
 
     if (bufferInfoList.empty()) return false;
@@ -244,6 +244,7 @@ BufferInfoList vsg::createHostVisibleBuffer(Device* device, const DataList& data
 
     return bufferInfoList;
 }
+#endif
 
 void vsg::copyDataListToBuffers(Device* device, BufferInfoList& bufferInfoList)
 {

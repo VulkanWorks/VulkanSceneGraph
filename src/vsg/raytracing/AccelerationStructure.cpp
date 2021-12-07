@@ -55,6 +55,8 @@ AccelerationStructure::~AccelerationStructure()
 
 void AccelerationStructure::compile(Context& context)
 {
+#if 0
+// TODO need to decide what to do here....
     Extensions* extensions = Extensions::Get(context.device, true);
 
     VkAccelerationStructureBuildSizesInfoKHR accelerationStructureBuildSizesInfo{};
@@ -86,4 +88,5 @@ void AccelerationStructure::compile(Context& context)
     {
         throw Exception{"Error: vsg::AccelerationStructure::compile(...) failed to create AccelerationStructure.", result};
     }
+#endif
 }
