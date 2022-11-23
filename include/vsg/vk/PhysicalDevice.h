@@ -17,13 +17,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 namespace vsg
 {
+    /// PhysicalDevice encapsulates VkPhysicalDevice
+    /// Maps to a Vulkan capable physical device, like a dedicated graphics car or integrated GPU.
     class VSG_DECLSPEC PhysicalDevice : public Inherit<Object, PhysicalDevice>
     {
     public:
         observer_ptr<Instance> getInstance() { return _instance; }
 
         operator VkPhysicalDevice() const { return _device; }
-        VkPhysicalDevice getPhysicalDevice() const { return _device; }
+        VkPhysicalDevice vk() const { return _device; }
 
         int getQueueFamily(VkQueueFlags queueFlags) const;
         std::pair<int, int> getQueueFamily(VkQueueFlags queueFlags, Surface* surface) const;
@@ -40,11 +42,14 @@ namespace vsg
             FeatureStruct features = {};
             features.sType = type;
 
-            VkPhysicalDeviceFeatures2 features2 = {};
-            features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-            features2.pNext = &features;
+            if (_vkGetPhysicalDeviceFeatures2)
+            {
+                VkPhysicalDeviceFeatures2 features2 = {};
+                features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+                features2.pNext = &features;
 
-            vkGetPhysicalDeviceFeatures2(_device, &features2);
+                _vkGetPhysicalDeviceFeatures2(_device, &features2);
+            }
 
             return features;
         }
@@ -55,11 +60,14 @@ namespace vsg
             PropertiesStruct properties = {};
             properties.sType = type;
 
-            VkPhysicalDeviceProperties2 properties2 = {};
-            properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-            properties2.pNext = &properties;
+            if (_vkGetPhysicalDeviceProperties2)
+            {
+                VkPhysicalDeviceProperties2 properties2 = {};
+                properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+                properties2.pNext = &properties;
 
-            vkGetPhysicalDeviceProperties2(_device, &properties2);
+                _vkGetPhysicalDeviceProperties2(_device, &properties2);
+            }
 
             return properties;
         }
@@ -80,6 +88,9 @@ namespace vsg
         VkPhysicalDeviceFeatures _features;
         VkPhysicalDeviceProperties _properties;
         QueueFamilyProperties _queueFamiles;
+
+        PFN_vkGetPhysicalDeviceFeatures2 _vkGetPhysicalDeviceFeatures2 = nullptr;
+        PFN_vkGetPhysicalDeviceProperties2 _vkGetPhysicalDeviceProperties2 = nullptr;
 
         vsg::observer_ptr<Instance> _instance;
     };

@@ -15,6 +15,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/core/Array.h>
 #include <vsg/core/Array2D.h>
 #include <vsg/core/Array3D.h>
+#include <vsg/core/Mask.h>
 #include <vsg/core/Value.h>
 
 namespace vsg
@@ -36,10 +37,22 @@ namespace vsg
     class MatrixTransform;
     class Transform;
     class Geometry;
+    class VertexDraw;
     class VertexIndexDraw;
     class DepthSorted;
     class Bin;
     class Switch;
+    class Light;
+    class AmbientLight;
+    class DirectionalLight;
+    class PointLight;
+    class SpotLight;
+
+    // forward declare vulkan classes
+    class Text;
+    class TextGroup;
+    class TextTechnique;
+    class TextLayout;
 
     // forward declare vulkan classes
     class BufferInfo;
@@ -77,6 +90,12 @@ namespace vsg
     class DynamicState;
     class ResourceHints;
     class ClearAttachments;
+    class QueryPool;
+    class ResetQueryPool;
+    class BeginQuery;
+    class EndQuery;
+    class WriteTimestamp;
+    class CopyQueryPoolResults;
 
     // forward declare rtx classes
     class DrawMeshTasks;
@@ -122,8 +141,8 @@ namespace vsg
     public:
         ConstVisitor();
 
-        uint32_t traversalMask = 0xffffffff;
-        uint32_t overrideMask = 0x0;
+        Mask traversalMask = MASK_ALL;
+        Mask overrideMask = MASK_OFF;
 
         virtual void apply(const Object&);
         virtual void apply(const Objects&);
@@ -240,10 +259,22 @@ namespace vsg
         virtual void apply(const MatrixTransform&);
         virtual void apply(const Transform&);
         virtual void apply(const Geometry&);
+        virtual void apply(const VertexDraw&);
         virtual void apply(const VertexIndexDraw&);
         virtual void apply(const DepthSorted&);
         virtual void apply(const Bin&);
         virtual void apply(const Switch&);
+        virtual void apply(const Light&);
+        virtual void apply(const AmbientLight&);
+        virtual void apply(const DirectionalLight&);
+        virtual void apply(const PointLight&);
+        virtual void apply(const SpotLight&);
+
+        // text
+        virtual void apply(const Text&);
+        virtual void apply(const TextGroup&);
+        virtual void apply(const TextTechnique&);
+        virtual void apply(const TextLayout&);
 
         // Vulkan nodes
         virtual void apply(const BufferInfo&);
@@ -281,6 +312,12 @@ namespace vsg
         virtual void apply(const Draw&);
         virtual void apply(const DrawIndexed&);
         virtual void apply(const ClearAttachments&);
+        virtual void apply(const QueryPool&);
+        virtual void apply(const ResetQueryPool&);
+        virtual void apply(const BeginQuery&);
+        virtual void apply(const EndQuery&);
+        virtual void apply(const WriteTimestamp&);
+        virtual void apply(const CopyQueryPoolResults&);
 
         // rtx classes
         virtual void apply(const DrawMeshTasks&);

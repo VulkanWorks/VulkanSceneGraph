@@ -18,7 +18,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #    define NOMINMAX
 #endif
 
-#include <vsg/viewer/Window.h>
+#include <vsg/app/Window.h>
 #include <vsg/ui/KeyEvent.h>
 #include <vsg/ui/PointerEvent.h>
 
@@ -83,7 +83,16 @@ namespace vsgWin32
             // our actual keystroke is what we get after the ::ToAscii call
             char asciiKey[2];
             int32_t numChars = ::ToAscii(static_cast<UINT>(wParam), (lParam>>16)&0xff, keyState, reinterpret_cast<WORD*>(asciiKey), 0);
-            if (numChars>0) keySymbol = static_cast<vsg::KeySymbol>(asciiKey[0]);
+            if (numChars>0)
+            {
+                itr = _keycodeMap.find(asciiKey[0]);
+                if (itr != _keycodeMap.end()) keySymbol = itr->second;
+                else keySymbol = static_cast<vsg::KeySymbol>(asciiKey[0]);
+            }
+            else
+            {
+                keySymbol = vsg::KEY_Undefined;
+            }
 
             return true;
         }
@@ -111,6 +120,7 @@ namespace vsgWin32
     }
 
 
+    /// Win32_Window implements Win32 specific window creation, event handling and vulkan Surface setup.
     class Win32_Window : public vsg::Inherit<vsg::Window, Win32_Window>
     {
     public:

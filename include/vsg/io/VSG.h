@@ -14,9 +14,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <vsg/io/ReaderWriter.h>
 
+#include <sstream>
+
 namespace vsg
 {
 
+    /// ReaderWriter for reading and writing native VSG ascii and binary files.
     class VSG_DECLSPEC VSG : public Inherit<ReaderWriter, VSG>
     {
     public:

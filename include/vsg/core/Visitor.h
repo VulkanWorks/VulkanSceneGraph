@@ -15,6 +15,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/core/Array.h>
 #include <vsg/core/Array2D.h>
 #include <vsg/core/Array3D.h>
+#include <vsg/core/Mask.h>
 #include <vsg/core/Value.h>
 
 namespace vsg
@@ -36,10 +37,22 @@ namespace vsg
     class MatrixTransform;
     class Transform;
     class Geometry;
+    class VertexDraw;
     class VertexIndexDraw;
     class DepthSorted;
     class Bin;
     class Switch;
+    class Light;
+    class AmbientLight;
+    class DirectionalLight;
+    class PointLight;
+    class SpotLight;
+
+    // forward declare vulkan classes
+    class Text;
+    class TextGroup;
+    class TextTechnique;
+    class TextLayout;
 
     // forward declare vulkan classes
     class BufferInfo;
@@ -77,6 +90,12 @@ namespace vsg
     class DynamicState;
     class ResourceHints;
     class ClearAttachments;
+    class QueryPool;
+    class ResetQueryPool;
+    class BeginQuery;
+    class EndQuery;
+    class WriteTimestamp;
+    class CopyQueryPoolResults;
 
     // forward declare rtx classes
     class DrawMeshTasks;
@@ -122,8 +141,8 @@ namespace vsg
     public:
         Visitor();
 
-        uint32_t traversalMask = 0xffffffff;
-        uint32_t overrideMask = 0x0;
+        Mask traversalMask = MASK_ALL;
+        Mask overrideMask = MASK_OFF;
 
         virtual void apply(Object&);
         virtual void apply(Objects&);
@@ -240,10 +259,22 @@ namespace vsg
         virtual void apply(MatrixTransform&);
         virtual void apply(Transform&);
         virtual void apply(Geometry&);
+        virtual void apply(VertexDraw&);
         virtual void apply(VertexIndexDraw&);
         virtual void apply(DepthSorted&);
         virtual void apply(Bin&);
         virtual void apply(Switch&);
+        virtual void apply(Light&);
+        virtual void apply(AmbientLight&);
+        virtual void apply(DirectionalLight&);
+        virtual void apply(PointLight&);
+        virtual void apply(SpotLight&);
+
+        // text
+        virtual void apply(Text&);
+        virtual void apply(TextGroup&);
+        virtual void apply(TextTechnique&);
+        virtual void apply(TextLayout&);
 
         // Vulkan nodes
         virtual void apply(BufferInfo&);
@@ -281,6 +312,12 @@ namespace vsg
         virtual void apply(Draw&);
         virtual void apply(DrawIndexed&);
         virtual void apply(ClearAttachments&);
+        virtual void apply(QueryPool&);
+        virtual void apply(ResetQueryPool&);
+        virtual void apply(BeginQuery&);
+        virtual void apply(EndQuery&);
+        virtual void apply(WriteTimestamp&);
+        virtual void apply(CopyQueryPoolResults&);
 
         // rtx classes
         virtual void apply(DrawMeshTasks&);

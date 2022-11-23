@@ -43,16 +43,16 @@ namespace vsg
         Value() :
             _value{} { dirty(); }
         Value(const Value& rhs) :
-            _value(rhs._value) { dirty(); }
+            Data(rhs), _value(rhs._value) { dirty(); }
         explicit Value(const value_type& in_value) :
             _value(in_value) { dirty(); }
 
         template<typename... Args>
-        explicit Value(Args... args) :
+        explicit Value(Args&&... args) :
             _value(args...) { dirty(); }
 
         template<typename... Args>
-        static ref_ptr<Value> create(Args... args)
+        static ref_ptr<Value> create(Args&&... args)
         {
             return ref_ptr<Value>(new Value(args...));
         }
@@ -69,14 +69,20 @@ namespace vsg
         void read(Input& input) override
         {
             Data::read(input);
-            input.read("Value", _value);
+            if (input.version_greater_equal(0, 6, 1))
+                input.read("value", _value);
+            else
+                input.read("Value", _value);
             dirty();
         }
 
         void write(Output& output) const override
         {
             Data::write(output);
-            output.write("Value", _value);
+            if (output.version_greater_equal(0, 6, 1))
+                output.write("value", _value);
+            else
+                output.write("Value", _value);
         }
 
         std::size_t valueSize() const override { return sizeof(value_type); }
@@ -148,7 +154,7 @@ namespace vsg
         }
     }
 
-    /// convience function for getting a value from the first object with the named value, falling back to specififed defaultValue when none is available.
+    /// convenience function for getting a value from the first object with the named value, falling back to specified defaultValue when none is available.
     /// usage:   auto flag = vsg::value<bool>(false, "flag", object1);
     /// usage:   auto angle = vsg::value<float>(0.0f, "angle", object1, object2);
     template<typename T, typename... Args>

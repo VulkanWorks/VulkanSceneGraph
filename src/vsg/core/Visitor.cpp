@@ -465,6 +465,10 @@ void Visitor::apply(Geometry& value)
 {
     apply(static_cast<Command&>(value));
 }
+void Visitor::apply(VertexDraw& value)
+{
+    apply(static_cast<Command&>(value));
+}
 void Visitor::apply(VertexIndexDraw& value)
 {
     apply(static_cast<Command&>(value));
@@ -481,10 +485,51 @@ void Visitor::apply(Switch& value)
 {
     apply(static_cast<Node&>(value));
 }
+void Visitor::apply(Light& value)
+{
+    apply(static_cast<Node&>(value));
+}
+void Visitor::apply(AmbientLight& value)
+{
+    apply(static_cast<Light&>(value));
+}
+void Visitor::apply(DirectionalLight& value)
+{
+    apply(static_cast<Light&>(value));
+}
+void Visitor::apply(PointLight& value)
+{
+    apply(static_cast<Light&>(value));
+}
+void Visitor::apply(SpotLight& value)
+{
+    apply(static_cast<Light&>(value));
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Vulkan Object
+// Text Objects
+//
+void Visitor::apply(Text& value)
+{
+    apply(static_cast<Node&>(value));
+}
+void Visitor::apply(TextGroup& value)
+{
+    apply(static_cast<Node&>(value));
+}
+void Visitor::apply(TextTechnique& value)
+{
+    apply(static_cast<Object&>(value));
+}
+void Visitor::apply(TextLayout& value)
+{
+    apply(static_cast<Object&>(value));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Vulkan Objects
 //
 void Visitor::apply(BufferInfo& value)
 {
@@ -623,6 +668,30 @@ void Visitor::apply(DrawIndexed& value)
     apply(static_cast<Command&>(value));
 }
 void Visitor::apply(ClearAttachments& value)
+{
+    apply(static_cast<Command&>(value));
+}
+void Visitor::apply(QueryPool& value)
+{
+    apply(static_cast<Object&>(value));
+}
+void Visitor::apply(ResetQueryPool& value)
+{
+    apply(static_cast<Command&>(value));
+}
+void Visitor::apply(BeginQuery& value)
+{
+    apply(static_cast<Command&>(value));
+}
+void Visitor::apply(EndQuery& value)
+{
+    apply(static_cast<Command&>(value));
+}
+void Visitor::apply(WriteTimestamp& value)
+{
+    apply(static_cast<Command&>(value));
+}
+void Visitor::apply(CopyQueryPoolResults& value)
 {
     apply(static_cast<Command&>(value));
 }

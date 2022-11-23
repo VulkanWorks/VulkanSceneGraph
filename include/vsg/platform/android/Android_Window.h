@@ -14,7 +14,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #define VK_USE_PLATFORM_ANDROID_KHR
 
-#include <vsg/viewer/Window.h>
+#include <vsg/app/Window.h>
 #include <vsg/ui/KeyEvent.h>
 
 #include <android/input.h>
@@ -22,6 +22,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 namespace vsgAndroid
 {
+
+    /// KeyboardMap maps Andriod keyboard events to vsg::KeySymbol
     class KeyboardMap : public vsg::Object
     {
     public:
@@ -57,6 +59,7 @@ namespace vsgAndroid
     };
 
 
+    /// Android_Window implements Android specific window creation, event handling and vulkan Surface setup.
     class Android_Window : public vsg::Inherit<vsg::Window, Android_Window>
     {
     public:
