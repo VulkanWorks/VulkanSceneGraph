@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.7)
 
 project(vsg
-    VERSION 1.0.0
+    VERSION 1.0.3
     DESCRIPTION "VulkanSceneGraph library"
     LANGUAGES CXX
 )
-set(VSG_SOVERSION 10)
-SET(VSG_RELEASE_CANDIDATE 0)
+set(VSG_SOVERSION 11)
+SET(VSG_RELEASE_CANDIDATE 1)
 set(Vulkan_MIN_VERSION 1.1.70.0)
 
 set(VSG_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}" CACHE INTERNAL "Root source directory of VulkanSceneGraph.")
@@ -71,6 +71,12 @@ vsg_add_target_clang_format(
     FILES
         ${VSG_SOURCE_DIR}/include/vsg/*/*.h
         ${VSG_SOURCE_DIR}/src/vsg/*/*.cpp
+        ${VSG_SOURCE_DIR}/include/vsg/platform/unix/*.h
+        ${VSG_SOURCE_DIR}/src/vsg/platform/unix/*.cpp
+        ${VSG_SOURCE_DIR}/include/vsg/platform/win32/*.h
+        ${VSG_SOURCE_DIR}/src/vsg/platform/win32/*.cpp
+        ${VSG_SOURCE_DIR}/include/vsg/platform/android/*.h
+        ${VSG_SOURCE_DIR}/src/vsg/platform/android/*.cpp
 )
 vsg_add_target_clobber()
 vsg_add_target_cppcheck(

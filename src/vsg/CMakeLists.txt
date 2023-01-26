@@ -129,6 +129,7 @@ set(SOURCES
     io/spirv.cpp
     io/tile.cpp
     io/glsl.cpp
+    io/txt.cpp
     io/read.cpp
     io/write.cpp
     io/mem_stream.cpp
@@ -139,7 +140,6 @@ set(SOURCES
     text/StandardLayout.cpp
     text/Text.cpp
     text/TextGroup.cpp
-
 
     threading/Affinity.cpp
     threading/OperationThreads.cpp
@@ -256,7 +256,7 @@ if (glslang_FOUND)
 
     include(CheckCXXSourceRuns)
 
-    set(CMAKE_REQUIRED_LIBRARIES ${glslang_LIBRARY})
+    set(CMAKE_REQUIRED_LIBRARIES ${glslang_LIBRARIES})
     set(CMAKE_REQUIRED_INCLUDES ${glslang_INCLUDE_DIR})
 
     if (NOT GLSLANG_ResourceLimits_maxDualSourceDrawBuffersEXT)
@@ -432,6 +432,9 @@ set_property(TARGET vsg PROPERTY VERSION ${VSG_VERSION_MAJOR}.${VSG_VERSION_MINO
 set_property(TARGET vsg PROPERTY SOVERSION ${VSG_SOVERSION})
 set_property(TARGET vsg PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET vsg PROPERTY CXX_STANDARD 17)
+if(WIN32)
+    set_property(TARGET vsg PROPERTY RUNTIME_OUTPUT_NAME vsg-${VSG_SOVERSION})
+endif()
 
 target_compile_definitions(vsg PRIVATE ${EXTRA_DEFINES})
 target_include_directories(vsg PUBLIC $<BUILD_INTERFACE:${VSG_SOURCE_DIR}/include> $<BUILD_INTERFACE:${VSG_BINARY_DIR}/include>)
@@ -452,7 +455,7 @@ endif()
 # install lib
 install(TARGETS vsg ${VSG_INSTALL_TARGETS_DEFAULT_FLAGS})
 
-# instal cmake config files.
+# install cmake config files.
 install(
     FILES
         "${VSG_SOURCE_DIR}/cmake/FindVulkan.cmake"

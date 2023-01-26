@@ -266,7 +266,7 @@ ref_ptr<ArrayState> DisplacementMapArrayState::clone(ref_ptr<ArrayState> arraySt
 
 void DisplacementMapArrayState::apply(const DescriptorImage& di)
 {
-    if (di.imageInfoList.size() >= 1)
+    if (!di.imageInfoList.empty())
     {
         auto& imageInfo = *di.imageInfoList[0];
         if (imageInfo.imageView && imageInfo.imageView->image)
@@ -323,7 +323,7 @@ ref_ptr<const vec3Array> DisplacementMapArrayState::vertexArray(uint32_t /*insta
 
         auto new_vertices = vsg::vec3Array::create(static_cast<uint32_t>(vertices->size()));
         auto src_vertex_itr = vertices->begin();
-        auto src_teccoord_itr = texcoords->begin();
+        auto src_texcoord_itr = texcoords->begin();
         auto src_normal_itr = normals->begin();
         // vec2 tc_scale(static_cast<float>(displacementMap->width()) - 1.0f, static_cast<float>(displacementMap->height()) - 1.0f);
 
@@ -332,7 +332,7 @@ ref_ptr<const vec3Array> DisplacementMapArrayState::vertexArray(uint32_t /*insta
 
         for (auto& v : *new_vertices)
         {
-            auto& tc = *(src_teccoord_itr++);
+            auto& tc = *(src_texcoord_itr++);
             auto& n = *(src_normal_itr++);
             float d = sample(*sampler, *displacementMap, tc);
             v = *(src_vertex_itr++) + n * d;
