@@ -65,6 +65,102 @@ void ConstVisitor::apply(const doubleValue& value)
 {
     apply(static_cast<const Data&>(value));
 }
+void ConstVisitor::apply(const vec2Value& value)
+{
+    apply(static_cast<const Data&>(value));
+}
+void ConstVisitor::apply(const vec3Value& value)
+{
+    apply(static_cast<const Data&>(value));
+}
+void ConstVisitor::apply(const vec4Value& value)
+{
+    apply(static_cast<const Data&>(value));
+}
+void ConstVisitor::apply(const dvec2Value& value)
+{
+    apply(static_cast<const Data&>(value));
+}
+void ConstVisitor::apply(const dvec3Value& value)
+{
+    apply(static_cast<const Data&>(value));
+}
+void ConstVisitor::apply(const dvec4Value& value)
+{
+    apply(static_cast<const Data&>(value));
+}
+void ConstVisitor::apply(const bvec2Value& value)
+{
+    apply(static_cast<const Data&>(value));
+}
+void ConstVisitor::apply(const bvec3Value& value)
+{
+    apply(static_cast<const Data&>(value));
+}
+void ConstVisitor::apply(const bvec4Value& value)
+{
+    apply(static_cast<const Data&>(value));
+}
+void ConstVisitor::apply(const ubvec2Value& value)
+{
+    apply(static_cast<const Data&>(value));
+}
+void ConstVisitor::apply(const ubvec3Value& value)
+{
+    apply(static_cast<const Data&>(value));
+}
+void ConstVisitor::apply(const ubvec4Value& value)
+{
+    apply(static_cast<const Data&>(value));
+}
+void ConstVisitor::apply(const svec2Value& value)
+{
+    apply(static_cast<const Data&>(value));
+}
+void ConstVisitor::apply(const svec3Value& value)
+{
+    apply(static_cast<const Data&>(value));
+}
+void ConstVisitor::apply(const svec4Value& value)
+{
+    apply(static_cast<const Data&>(value));
+}
+void ConstVisitor::apply(const usvec2Value& value)
+{
+    apply(static_cast<const Data&>(value));
+}
+void ConstVisitor::apply(const usvec3Value& value)
+{
+    apply(static_cast<const Data&>(value));
+}
+void ConstVisitor::apply(const usvec4Value& value)
+{
+    apply(static_cast<const Data&>(value));
+}
+void ConstVisitor::apply(const ivec2Value& value)
+{
+    apply(static_cast<const Data&>(value));
+}
+void ConstVisitor::apply(const ivec3Value& value)
+{
+    apply(static_cast<const Data&>(value));
+}
+void ConstVisitor::apply(const ivec4Value& value)
+{
+    apply(static_cast<const Data&>(value));
+}
+void ConstVisitor::apply(const uivec2Value& value)
+{
+    apply(static_cast<const Data&>(value));
+}
+void ConstVisitor::apply(const uivec3Value& value)
+{
+    apply(static_cast<const Data&>(value));
+}
+void ConstVisitor::apply(const uivec4Value& value)
+{
+    apply(static_cast<const Data&>(value));
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -421,6 +517,10 @@ void ConstVisitor::apply(const Node& value)
 {
     apply(static_cast<const Object&>(value));
 }
+void ConstVisitor::apply(const Compilable& value)
+{
+    apply(static_cast<const Node&>(value));
+}
 void ConstVisitor::apply(const Commands& value)
 {
     apply(static_cast<const Node&>(value));
@@ -537,7 +637,7 @@ void ConstVisitor::apply(const BufferInfo& value)
 }
 void ConstVisitor::apply(const Command& value)
 {
-    apply(static_cast<const Node&>(value));
+    apply(static_cast<const Compilable&>(value));
 }
 void ConstVisitor::apply(const StateCommand& value)
 {
@@ -698,7 +798,7 @@ void ConstVisitor::apply(const CopyQueryPoolResults& value)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// RTX
+// Mesh shading
 //
 void ConstVisitor::apply(const DrawMeshTasks& dmt)
 {

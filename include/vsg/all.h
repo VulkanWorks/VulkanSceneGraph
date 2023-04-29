@@ -33,6 +33,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/core/Version.h>
 #include <vsg/core/Visitor.h>
 #include <vsg/core/compare.h>
+#include <vsg/core/contains.h>
 #include <vsg/core/observer_ptr.h>
 #include <vsg/core/ref_ptr.h>
 #include <vsg/core/type_name.h>
@@ -57,6 +58,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 // Node header files
 #include <vsg/nodes/AbsoluteTransform.h>
 #include <vsg/nodes/Bin.h>
+#include <vsg/nodes/Compilable.h>
 #include <vsg/nodes/CullGroup.h>
 #include <vsg/nodes/CullNode.h>
 #include <vsg/nodes/DepthSorted.h>
@@ -244,6 +246,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/io/spirv.h>
 #include <vsg/io/stream.h>
 #include <vsg/io/tile.h>
+#include <vsg/io/txt.h>
 #include <vsg/io/write.h>
 
 // Utility header files
@@ -281,8 +284,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/raytracing/TopLevelAccelerationStructure.h>
 #include <vsg/raytracing/TraceRays.h>
 
-// RTX mesh  header files
-#include <vsg/rtx/DrawMeshTasks.h>
-#include <vsg/rtx/DrawMeshTasksIndirect.h>
-#include <vsg/rtx/DrawMeshTasksIndirectCommand.h>
-#include <vsg/rtx/DrawMeshTasksIndirectCount.h>
+// Mesh shader header files
+#include <vsg/meshshaders/DrawMeshTasks.h>
+#include <vsg/meshshaders/DrawMeshTasksIndirect.h>
+#include <vsg/meshshaders/DrawMeshTasksIndirectCount.h>

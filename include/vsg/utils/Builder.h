@@ -31,7 +31,7 @@ namespace vsg
         bool wireframe = false;
         bool instance_colors_vec4 = true;
         bool instance_positions_vec3 = false; // user must assign GeometyInfo.position with vec3Array containing positions
-        bool billboard = false;  // user must assign GeometyInfo.position with vec4Array containing position_scaleDistance, overrides instance_positions_vec3 setting
+        bool billboard = false;               // user must assign GeometyInfo.position with vec4Array containing position_scaleDistance, overrides instance_positions_vec3 setting
 
         ref_ptr<Data> image;
         ref_ptr<Data> displacementMap;
@@ -117,11 +117,14 @@ namespace vsg
 
         ref_ptr<CompileTraversal> compileTraversal;
 
-    private:
+    protected:
         void transform(const mat4& matrix, ref_ptr<vec3Array> vertices, ref_ptr<vec3Array> normals);
         ref_ptr<Data> instancePositions(const GeometryInfo& info, uint32_t& instanceCount);
         ref_ptr<Data> instanceColors(const GeometryInfo& info, uint32_t instanceCount);
         vec3 y_texcoord(const StateInfo& info) const;
+
+        ref_ptr<ShaderSet> _flatShadedShaderSet;
+        ref_ptr<ShaderSet> _phongShaderSet;
 
         using GeometryMap = std::map<GeometryInfo, ref_ptr<Node>>;
         GeometryMap _boxes;

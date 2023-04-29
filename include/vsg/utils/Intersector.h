@@ -37,7 +37,10 @@ namespace vsg
         void apply(const LOD& lod) override;
         void apply(const PagedLOD& plod) override;
         void apply(const CullNode& cn) override;
+        void apply(const CullGroup& cn) override;
+        void apply(const DepthSorted& cn) override;
 
+        void apply(const VertexDraw& vid) override;
         void apply(const VertexIndexDraw& vid) override;
         void apply(const Geometry& geometry) override;
 
@@ -68,8 +71,13 @@ namespace vsg
         /// intersect with a vkCmdDrawIndexed primitive
         virtual bool intersectDrawIndexed(uint32_t firstIndex, uint32_t indexCount, uint32_t firstInstance, uint32_t instanceCount) = 0;
 
+        /// get the current local to world matrix stack
+        std::vector<dmat4>& localToWorldStack() { return arrayStateStack.back()->localToWorldStack; }
+
+        /// get the current world to local matrix stack
+        std::vector<dmat4>& worldToLocalStack() { return arrayStateStack.back()->worldToLocalStack; }
+
     protected:
-        std::vector<dmat4> _matrixStack;
         ArrayStateStack arrayStateStack;
 
         ref_ptr<const ushortArray> ushort_indices;

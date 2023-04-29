@@ -176,9 +176,9 @@ set(SOURCES
     raytracing/TopLevelAccelerationStructure.cpp
     raytracing/TraceRays.cpp
 
-    rtx/DrawMeshTasks.cpp
-    rtx/DrawMeshTasksIndirect.cpp
-    rtx/DrawMeshTasksIndirectCount.cpp
+    meshshaders/DrawMeshTasks.cpp
+    meshshaders/DrawMeshTasksIndirect.cpp
+    meshshaders/DrawMeshTasksIndirectCount.cpp
 
     ui/UIEvent.cpp
     ui/ApplicationEvent.cpp
@@ -226,10 +226,11 @@ set(SOURCES
     utils/LoadPagedLOD.cpp
 )
 
-# add platform specific Window implementation
+if (${VSG_SUPPORTS_ShaderCompiler})
 
-
-
+    # include glslang source code directly into the VulkanScenegraph library build.
+    include(../glslang/build_vars.cmake)
+endif()
 
 # set up library dependencies
 set(LIBRARIES PUBLIC
@@ -251,114 +252,36 @@ if(NOT MSVC AND NOT ANDROID AND NOT APPLE)
   endif()
 endif()
 
-if (glslang_FOUND)
-    set(LIBRARIES ${LIBRARIES} PUBLIC ${glslang_LIBRARIES})
+if (VSG_SUPPORTS_Windowing)
+    if (ANDROID)
+        set(HEADERS ${HEADERS} ${VSG_SOURCE_DIR}/include/vsg/platform/android/Android_Window.h)
+        set(SOURCES ${SOURCES} platform/android/Android_Window.cpp)
 
-    include(CheckCXXSourceRuns)
-
-    set(CMAKE_REQUIRED_LIBRARIES ${glslang_LIBRARIES})
-    set(CMAKE_REQUIRED_INCLUDES ${glslang_INCLUDE_DIR})
-
-    if (NOT GLSLANG_ResourceLimits_maxDualSourceDrawBuffersEXT)
-        check_cxx_source_compiles("
-            #include <glslang/Include/ResourceLimits.h>
-
-            int main()
-            {
-                TBuiltInResource resource;
-                resource.maxDualSourceDrawBuffersEXT = 0;
-                return 0;
-            }
-        " GLSLANG_ResourceLimits_maxDualSourceDrawBuffersEXT)
-    endif()
-
-    if (GLSLANG_ResourceLimits_maxDualSourceDrawBuffersEXT)
-        set(EXTRA_DEFINES ${EXTRA_DEFINES} "GLSLANG_ResourceLimits_maxDualSourceDrawBuffersEXT")
-    endif()
-
-    if (NOT GLSLANG_EShLanguage_EShLangRayGen)
-        check_cxx_source_compiles("
-            #include <glslang/Public/ShaderLang.h>
-
-            int main()
-            {
-                EShLanguage result = EShLangRayGen;
-                return 0;
-            }
-        " GLSLANG_EShLanguage_EShLangRayGen)
-    endif()
-
-    if (NOT GLSLANG_EShLanguage_EShLangRayGenNV)
-        check_cxx_source_compiles("
-            #include <glslang/Public/ShaderLang.h>
-
-            int main()
-            {
-                EShLanguage result = EShLangRayGenNV;
-                return 0;
-            }
-        " GLSLANG_EShLanguage_EShLangRayGenNV)
-    endif()
-
-    if (GLSLANG_EShLanguage_EShLangRayGen)
-        set(EXTRA_DEFINES ${EXTRA_DEFINES} "GLSLANG_EShLangRayGen")
-    elseif (GLSLANG_EShLanguage_EShLangRayGenNV)
-        set(EXTRA_DEFINES ${EXTRA_DEFINES} "GLSLANG_EShLangRayGenNV")
-    endif()
-
-    if (NOT DEFINED GLSLANG_ResourceLimits_maxMeshViewCountEXT)
-        check_cxx_source_compiles("
-            #include <glslang/Include/ResourceLimits.h>
-
-            int main()
-            {
-                TBuiltInResource resource;
-                resource.maxMeshViewCountEXT = 0;
-                return 0;
-            }
-        " GLSLANG_ResourceLimits_maxMeshViewCountEXT)
-    endif()
-
-    if (GLSLANG_ResourceLimits_maxMeshViewCountEXT)
-        set(EXTRA_DEFINES ${EXTRA_DEFINES} "GLSLANG_ResourceLimits_maxMeshViewCountEXT")
-    endif()
-
-    set(FIND_DEPENDENCY_GLSLANG "include(\"\${CMAKE_CURRENT_LIST_DIR}/vsg_glslangConfig.cmake\")")
-
-
-endif()
-
-
-if (ANDROID)
-    set(HEADERS ${HEADERS} ${VSG_SOURCE_DIR}/include/vsg/platform/android/Android_Window.h)
-    set(SOURCES ${SOURCES} platform/android/Android_Window.cpp)
-
-    if(CMAKE_SYSTEM_VERSION GREATER 24)
-        set(LIBRARIES ${LIBRARIES} PRIVATE ${AndroidLib} PRIVATE ${AndroidNativeWindowLib})
+        if(CMAKE_SYSTEM_VERSION GREATER 24)
+            set(LIBRARIES ${LIBRARIES} PRIVATE ${AndroidLib} PRIVATE ${AndroidNativeWindowLib})
+        else()
+            set(LIBRARIES ${LIBRARIES} PRIVATE ${AndroidLib})
+        endif()
+    elseif (WIN32)
+        set(SOURCES ${SOURCES} platform/win32/Win32_Window.cpp)
+    elseif (IOS)
+        set(HEADERS ${HEADERS}
+            ${VSG_SOURCE_DIR}/include/vsg/platform/ios/iOS_Window.h
+            ${VSG_SOURCE_DIR}/include/vsg/platform/ios/iOS_ViewController.h
+        )
+        set(SOURCES ${SOURCES}
+            platform/ios/iOS_Window.mm
+            platform/ios/iOS_ViewController.mm
+        )
+        set(LIBRARIES ${LIBRARIES} PRIVATE ${UIKIT_LIBRARY} PRIVATE ${QUARTZCORE_LIBRARY})
+    elseif (APPLE)
+        set(SOURCES ${SOURCES} platform/macos/MacOS_Window.mm)
+        set(LIBRARIES ${LIBRARIES} PRIVATE ${COCOA_LIBRARY} PRIVATE ${QUARTZCORE_LIBRARY})
     else()
-        set(LIBRARIES ${LIBRARIES} PRIVATE ${AndroidLib})
+        set(SOURCES ${SOURCES} platform/xcb/Xcb_Window.cpp)
+        set(LIBRARIES ${LIBRARIES} PRIVATE PkgConfig::xcb)
     endif()
-
-elseif (WIN32)
-    set(SOURCES ${SOURCES} platform/win32/Win32_Window.cpp)
-elseif (IOS)
-    set(HEADERS ${HEADERS}
-        ${VSG_SOURCE_DIR}/include/vsg/platform/ios/iOS_Window.h
-        ${VSG_SOURCE_DIR}/include/vsg/platform/ios/iOS_ViewController.h
-    )
-    set(SOURCES ${SOURCES}
-        platform/ios/iOS_Window.mm
-        platform/ios/iOS_ViewController.mm
-    )
-    set(LIBRARIES ${LIBRARIES} PRIVATE ${UIKIT_LIBRARY} PRIVATE ${QUARTZCORE_LIBRARY})
-elseif (APPLE)
-    set(SOURCES ${SOURCES} platform/macos/MacOS_Window.mm)
-    set(LIBRARIES ${LIBRARIES} PRIVATE ${COCOA_LIBRARY} PRIVATE ${QUARTZCORE_LIBRARY})
-else()
-    set(SOURCES ${SOURCES} platform/unix/Xcb_Window.cpp)
-    set(LIBRARIES ${LIBRARIES} PRIVATE PkgConfig::xcb)
 endif()
-
 
 add_library(vsg ${HEADERS} ${SOURCES})
 
@@ -437,7 +360,14 @@ if(WIN32)
 endif()
 
 target_compile_definitions(vsg PRIVATE ${EXTRA_DEFINES})
-target_include_directories(vsg PUBLIC $<BUILD_INTERFACE:${VSG_SOURCE_DIR}/include> $<BUILD_INTERFACE:${VSG_BINARY_DIR}/include>)
+target_include_directories(vsg
+    PUBLIC
+        $<BUILD_INTERFACE:${VSG_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${VSG_BINARY_DIR}/include>
+    PRIVATE
+        $<BUILD_INTERFACE:${VSG_SOURCE_DIR}/src/glslang>
+        $<BUILD_INTERFACE:${GLSLANG_GENERATED_INCLUDEDIR}>
+)
 
 target_link_libraries(vsg ${LIBRARIES})
 
@@ -464,13 +394,6 @@ install(
     DESTINATION
         ${CMAKE_INSTALL_LIBDIR}/cmake/vsg
 )
-
-if (glslang_FOUND)
-    install(
-        FILES vsg_glslangConfig.cmake
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/vsg
-    )
-endif()
 
 vsg_add_cmake_support_files(
     CONFIG_TEMPLATE vsgConfig.cmake.in

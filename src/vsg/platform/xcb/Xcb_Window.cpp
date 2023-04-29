@@ -12,7 +12,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <vsg/core/Exception.h>
 #include <vsg/io/Logger.h>
-#include <vsg/platform/unix/Xcb_Window.h>
+#include <vsg/platform/xcb/Xcb_Window.h>
 #include <vsg/ui/ApplicationEvent.h>
 #include <vsg/ui/PointerEvent.h>
 #include <vsg/ui/ScrollWheelEvent.h>
@@ -558,6 +558,21 @@ void Xcb_Window::releaseConnection()
     _connection = {};
 }
 
+namespace
+{
+    // For the moment we don't want the modifier keys in pointer events.
+    uint16_t maskButtons(uint16_t state)
+    {
+        constexpr const uint16_t buttonMask =
+            XCB_BUTTON_MASK_1 |
+            XCB_BUTTON_MASK_2 |
+            XCB_BUTTON_MASK_3 |
+            XCB_BUTTON_MASK_4 |
+            XCB_BUTTON_MASK_5;
+        return state & buttonMask;
+    }
+}
+
 bool Xcb_Window::pollEvents(UIEvents& events)
 {
     xcb_generic_event_t* event;
@@ -614,15 +629,12 @@ bool Xcb_Window::pollEvents(UIEvents& events)
         case (XCB_CONFIGURE_NOTIFY): {
             auto configure = reinterpret_cast<const xcb_configure_notify_event_t*>(event);
 
-            // Xcb configure events can come with x,y == (0,0) or with values relative to the root, so explicitly get the new geometry and substitute if required to avoid inconsistencies
+            // Xcb configure events x,y values can be behave differently on different window managers so use getWindowGeometry(..) to avoid inconsistencies
             int32_t x = configure->x;
             int32_t y = configure->y;
             uint32_t width = configure->width;
             uint32_t height = configure->height;
-            if (configure->x == 0 && configure->y == 0)
-            {
-                vsgXcb::getWindowGeometry(_connection, _window, x, y, width, height);
-            }
+            vsgXcb::getWindowGeometry(_connection, _window, x, y, width, height);
 
             bool previousConfigureEventsIsEqual = false;
             for (auto previousEvent : events)
@@ -630,14 +642,14 @@ bool Xcb_Window::pollEvents(UIEvents& events)
                 vsg::ConfigureWindowEvent* cwe = dynamic_cast<vsg::ConfigureWindowEvent*>(previousEvent.get());
                 if (cwe)
                 {
-                    previousConfigureEventsIsEqual = (cwe->x == x) && (cwe->y == y) && (cwe->width == configure->width) && (cwe->height == configure->height);
+                    previousConfigureEventsIsEqual = (cwe->x == x) && (cwe->y == y) && (cwe->width == width) && (cwe->height == height);
                 }
             }
 
             if (!previousConfigureEventsIsEqual)
             {
                 vsg::clock::time_point event_time = vsg::clock::now();
-                bufferedEvents.emplace_back(vsg::ConfigureWindowEvent::create(this, event_time, x, y, configure->width, configure->height));
+                bufferedEvents.emplace_back(vsg::ConfigureWindowEvent::create(this, event_time, x, y, width, height));
                 _extent2D.width = width;
                 _extent2D.height = height;
             }
@@ -704,8 +716,8 @@ bool Xcb_Window::pollEvents(UIEvents& events)
                 }
                 else
                 {
-                    uint32_t pressedButtonMask = 1 << (7 + button_press->detail);
-                    uint32_t newButtonMask = uint32_t(button_press->state) | pressedButtonMask;
+                    uint16_t pressedButtonMask = 1 << (7 + button_press->detail);
+                    uint16_t newButtonMask = maskButtons(button_press->state) | pressedButtonMask;
                     bufferedEvents.emplace_back(vsg::ButtonPressEvent::create(this, event_time, button_press->event_x, button_press->event_y, vsg::ButtonMask(newButtonMask), button_press->detail));
                 }
             }
@@ -719,8 +731,8 @@ bool Xcb_Window::pollEvents(UIEvents& events)
             if (button_release->same_screen && button_release->detail != 4 && button_release->detail != 5)
             {
                 vsg::clock::time_point event_time = _first_xcb_time_point + std::chrono::milliseconds(button_release->time - _first_xcb_timestamp);
-                uint32_t releasedButtonMask = 1 << (7 + button_release->detail);
-                uint32_t newButtonMask = uint32_t(button_release->state) & ~releasedButtonMask;
+                uint16_t releasedButtonMask = 1 << (7 + button_release->detail);
+                uint16_t newButtonMask = maskButtons(button_release->state) & ~releasedButtonMask;
                 bufferedEvents.emplace_back(vsg::ButtonReleaseEvent::create(this, event_time, button_release->event_x, button_release->event_y, vsg::ButtonMask(newButtonMask), button_release->detail));
             }
 
@@ -731,7 +743,7 @@ bool Xcb_Window::pollEvents(UIEvents& events)
             if (motion_notify->same_screen)
             {
                 vsg::clock::time_point event_time = _first_xcb_time_point + std::chrono::milliseconds(motion_notify->time - _first_xcb_timestamp);
-                bufferedEvents.emplace_back(vsg::MoveEvent::create(this, event_time, motion_notify->event_x, motion_notify->event_y, vsg::ButtonMask(motion_notify->state)));
+                bufferedEvents.emplace_back(vsg::MoveEvent::create(this, event_time, motion_notify->event_x, motion_notify->event_y, vsg::ButtonMask(maskButtons(motion_notify->state))));
             }
 
             break;

@@ -17,27 +17,39 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 using namespace vsg;
 
-
 static std::set<vsg::Path> s_txt_extensionSupported{
-        ".txt",
-        ".text",
-        ".md",
-        ".json",
-        ".xml",
-        ".sh",
-        ".bat"
-    };
+    ".txt",
+    ".text",
+    ".md",
+    ".json",
+    ".xml",
+    ".sh",
+    ".bat"};
 
 bool txt::extensionSupported(const vsg::Path& path)
 {
     return s_txt_extensionSupported.count(path);
 }
 
-txt::txt()
+txt::txt() :
+    supportedExtensions{s_txt_extensionSupported}
 {
-    supportedExtensions = s_txt_extensionSupported;
 }
 
+ref_ptr<Object> txt::_read(std::istream& fin, ref_ptr<const Options>) const
+{
+    vsg::ref_ptr<vsg::stringValue> contents = vsg::stringValue::create();
+    auto& buffer = contents->value();
+
+    fin.seekg(0, fin.end);
+    size_t fileSize = fin.tellg();
+    buffer.resize(fileSize);
+
+    fin.seekg(0);
+    fin.read(reinterpret_cast<char*>(buffer.data()), fileSize);
+
+    return contents;
+}
 
 vsg::ref_ptr<vsg::Object> txt::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
@@ -49,24 +61,14 @@ vsg::ref_ptr<vsg::Object> txt::read(const vsg::Path& filename, vsg::ref_ptr<cons
     std::ifstream fin(filename, std::ios::ate | std::ios::binary);
     if (!fin.is_open()) return {};
 
-    return read(fin, options);
+    return _read(fin, options);
 }
 
 ref_ptr<vsg::Object> txt::read(std::istream& fin, ref_ptr<const Options> options) const
 {
     if (!compatibleExtension(options, supportedExtensions)) return {};
 
-    vsg::ref_ptr<vsg::stringValue> contents = vsg::stringValue::create();
-    auto& buffer = contents->value();
-
-    fin.seekg (0, fin.end);
-    size_t fileSize = fin.tellg();
-    buffer.resize(fileSize);
-
-    fin.seekg(0);
-    fin.read(reinterpret_cast<char*>(buffer.data()), fileSize);
-
-    return contents;
+    return _read(fin, options);
 }
 
 ref_ptr<vsg::Object> txt::read(const uint8_t* ptr, size_t size, ref_ptr<const Options> options) const
@@ -78,7 +80,7 @@ ref_ptr<vsg::Object> txt::read(const uint8_t* ptr, size_t size, ref_ptr<const Op
 
 bool txt::getFeatures(Features& features) const
 {
-    for(auto& ext : supportedExtensions)
+    for (auto& ext : supportedExtensions)
     {
         features.extensionFeatureMap[ext] = static_cast<FeatureMask>(READ_FILENAME | READ_ISTREAM | READ_MEMORY);
     }

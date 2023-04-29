@@ -16,12 +16,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/commands/DrawIndexed.h>
 #include <vsg/io/Logger.h>
 #include <vsg/maths/transform.h>
+#include <vsg/nodes/CullGroup.h>
 #include <vsg/nodes/CullNode.h>
+#include <vsg/nodes/DepthSorted.h>
 #include <vsg/nodes/Geometry.h>
 #include <vsg/nodes/LOD.h>
 #include <vsg/nodes/PagedLOD.h>
 #include <vsg/nodes/StateGroup.h>
 #include <vsg/nodes/Transform.h>
+#include <vsg/nodes/VertexDraw.h>
 #include <vsg/nodes/VertexIndexDraw.h>
 #include <vsg/state/GraphicsPipeline.h>
 #include <vsg/utils/Intersector.h>
@@ -118,6 +121,31 @@ void Intersector::apply(const CullNode& cn)
     PushPopNode ppn(_nodePath, &cn);
 
     if (intersects(cn.bound)) cn.traverse(*this);
+}
+
+void Intersector::apply(const CullGroup& cn)
+{
+    PushPopNode ppn(_nodePath, &cn);
+
+    if (intersects(cn.bound)) cn.traverse(*this);
+}
+
+void Intersector::apply(const DepthSorted& cn)
+{
+    PushPopNode ppn(_nodePath, &cn);
+
+    if (intersects(cn.bound)) cn.traverse(*this);
+}
+
+void Intersector::apply(const VertexDraw& vid)
+{
+    auto& arrayState = *arrayStateStack.back();
+    arrayState.apply(vid);
+    if (!arrayState.vertices) return;
+
+    PushPopNode ppn(_nodePath, &vid);
+
+    intersectDraw(vid.firstVertex, vid.vertexCount, vid.firstInstance, vid.instanceCount);
 }
 
 void Intersector::apply(const VertexIndexDraw& vid)

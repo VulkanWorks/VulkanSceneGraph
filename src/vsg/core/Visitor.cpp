@@ -65,6 +65,102 @@ void Visitor::apply(doubleValue& value)
 {
     apply(static_cast<Data&>(value));
 }
+void Visitor::apply(vec2Value& value)
+{
+    apply(static_cast<Data&>(value));
+}
+void Visitor::apply(vec3Value& value)
+{
+    apply(static_cast<Data&>(value));
+}
+void Visitor::apply(vec4Value& value)
+{
+    apply(static_cast<Data&>(value));
+}
+void Visitor::apply(dvec2Value& value)
+{
+    apply(static_cast<Data&>(value));
+}
+void Visitor::apply(dvec3Value& value)
+{
+    apply(static_cast<Data&>(value));
+}
+void Visitor::apply(dvec4Value& value)
+{
+    apply(static_cast<Data&>(value));
+}
+void Visitor::apply(bvec2Value& value)
+{
+    apply(static_cast<Data&>(value));
+}
+void Visitor::apply(bvec3Value& value)
+{
+    apply(static_cast<Data&>(value));
+}
+void Visitor::apply(bvec4Value& value)
+{
+    apply(static_cast<Data&>(value));
+}
+void Visitor::apply(ubvec2Value& value)
+{
+    apply(static_cast<Data&>(value));
+}
+void Visitor::apply(ubvec3Value& value)
+{
+    apply(static_cast<Data&>(value));
+}
+void Visitor::apply(ubvec4Value& value)
+{
+    apply(static_cast<Data&>(value));
+}
+void Visitor::apply(svec2Value& value)
+{
+    apply(static_cast<Data&>(value));
+}
+void Visitor::apply(svec3Value& value)
+{
+    apply(static_cast<Data&>(value));
+}
+void Visitor::apply(svec4Value& value)
+{
+    apply(static_cast<Data&>(value));
+}
+void Visitor::apply(usvec2Value& value)
+{
+    apply(static_cast<Data&>(value));
+}
+void Visitor::apply(usvec3Value& value)
+{
+    apply(static_cast<Data&>(value));
+}
+void Visitor::apply(usvec4Value& value)
+{
+    apply(static_cast<Data&>(value));
+}
+void Visitor::apply(ivec2Value& value)
+{
+    apply(static_cast<Data&>(value));
+}
+void Visitor::apply(ivec3Value& value)
+{
+    apply(static_cast<Data&>(value));
+}
+void Visitor::apply(ivec4Value& value)
+{
+    apply(static_cast<Data&>(value));
+}
+void Visitor::apply(uivec2Value& value)
+{
+    apply(static_cast<Data&>(value));
+}
+void Visitor::apply(uivec3Value& value)
+{
+    apply(static_cast<Data&>(value));
+}
+void Visitor::apply(uivec4Value& value)
+{
+    apply(static_cast<Data&>(value));
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -421,6 +517,10 @@ void Visitor::apply(Node& value)
 {
     apply(static_cast<Object&>(value));
 }
+void Visitor::apply(Compilable& value)
+{
+    apply(static_cast<Node&>(value));
+}
 void Visitor::apply(Commands& value)
 {
     apply(static_cast<Node&>(value));
@@ -537,7 +637,7 @@ void Visitor::apply(BufferInfo& value)
 }
 void Visitor::apply(Command& value)
 {
-    apply(static_cast<Node&>(value));
+    apply(static_cast<Compilable&>(value));
 }
 void Visitor::apply(StateCommand& value)
 {
@@ -698,7 +798,7 @@ void Visitor::apply(CopyQueryPoolResults& value)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// RTX
+// Mesh shading
 //
 void Visitor::apply(DrawMeshTasks& dmt)
 {

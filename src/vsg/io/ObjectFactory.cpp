@@ -276,10 +276,10 @@ ObjectFactory::ObjectFactory()
     add<vsg::LookAt>();
     add<vsg::Perspective>();
 
-    // rtx
+    // mesh shading
     add<vsg::DrawMeshTasks>();
     add<vsg::DrawMeshTasksIndirect>();
-    add<vsg::DrawMeshTasksIndirectCommandArray>();
+    add<vsg::DrawMeshTasksIndirectCount>();
 
     // io
     add<vsg::Options>();
@@ -295,6 +295,7 @@ ObjectFactory::ObjectFactory()
     add<vsg::PositionAndDisplacementMapArrayState>();
     add<vsg::DisplacementMapArrayState>();
     add<vsg::PositionArrayState>();
+    add<vsg::BillboardArrayState>();
     add<vsg::SharedObjects>();
 
     // application

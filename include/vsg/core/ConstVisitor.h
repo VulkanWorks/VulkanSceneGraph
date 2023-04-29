@@ -56,6 +56,7 @@ namespace vsg
 
     // forward declare vulkan classes
     class BufferInfo;
+    class Compilable;
     class Command;
     class StateCommand;
     class StateSwitch;
@@ -156,6 +157,30 @@ namespace vsg
         virtual void apply(const uintValue&);
         virtual void apply(const floatValue&);
         virtual void apply(const doubleValue&);
+        virtual void apply(const vec2Value&);
+        virtual void apply(const vec3Value&);
+        virtual void apply(const vec4Value&);
+        virtual void apply(const dvec2Value&);
+        virtual void apply(const dvec3Value&);
+        virtual void apply(const dvec4Value&);
+        virtual void apply(const bvec2Value&);
+        virtual void apply(const bvec3Value&);
+        virtual void apply(const bvec4Value&);
+        virtual void apply(const ubvec2Value&);
+        virtual void apply(const ubvec3Value&);
+        virtual void apply(const ubvec4Value&);
+        virtual void apply(const svec2Value&);
+        virtual void apply(const svec3Value&);
+        virtual void apply(const svec4Value&);
+        virtual void apply(const usvec2Value&);
+        virtual void apply(const usvec3Value&);
+        virtual void apply(const usvec4Value&);
+        virtual void apply(const ivec2Value&);
+        virtual void apply(const ivec3Value&);
+        virtual void apply(const ivec4Value&);
+        virtual void apply(const uivec2Value&);
+        virtual void apply(const uivec3Value&);
+        virtual void apply(const uivec4Value&);
 
         // Arrays
         virtual void apply(const byteArray&);
@@ -248,6 +273,7 @@ namespace vsg
 
         // Nodes
         virtual void apply(const Node&);
+        virtual void apply(const Compilable&);
         virtual void apply(const Commands&);
         virtual void apply(const Group&);
         virtual void apply(const QuadGroup&);
@@ -319,7 +345,7 @@ namespace vsg
         virtual void apply(const WriteTimestamp&);
         virtual void apply(const CopyQueryPoolResults&);
 
-        // rtx classes
+        // mesh shading classes
         virtual void apply(const DrawMeshTasks&);
         virtual void apply(const DrawMeshTasksIndirect&);
         virtual void apply(const DrawMeshTasksIndirectCount&);

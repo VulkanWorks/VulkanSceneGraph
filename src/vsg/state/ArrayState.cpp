@@ -15,6 +15,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/io/Options.h>
 #include <vsg/maths/sample.h>
 #include <vsg/nodes/Geometry.h>
+#include <vsg/nodes/VertexDraw.h>
 #include <vsg/nodes/VertexIndexDraw.h>
 #include <vsg/state/ArrayState.h>
 #include <vsg/state/BindDescriptorSet.h>
@@ -78,6 +79,11 @@ void ArrayState::apply(const InputAssemblyState& ias)
 void ArrayState::apply(const vsg::Geometry& geometry)
 {
     applyArrays(geometry.firstBinding, geometry.arrays);
+}
+
+void ArrayState::apply(const vsg::VertexDraw& vid)
+{
+    applyArrays(vid.firstBinding, vid.arrays);
 }
 
 void ArrayState::apply(const vsg::VertexIndexDraw& vid)
@@ -416,4 +422,98 @@ ref_ptr<const vec3Array> PositionAndDisplacementMapArrayState::vertexArray(uint3
     }
 
     return vertices;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// BillboardArrayState
+//
+BillboardArrayState::BillboardArrayState()
+{
+}
+
+BillboardArrayState::BillboardArrayState(const BillboardArrayState& rhs) :
+    Inherit(rhs),
+    position_attribute_location(rhs.position_attribute_location),
+    positionAttribute(rhs.positionAttribute)
+{
+}
+
+BillboardArrayState::BillboardArrayState(const ArrayState& rhs) :
+    Inherit(rhs)
+{
+}
+
+ref_ptr<ArrayState> BillboardArrayState::clone()
+{
+    return BillboardArrayState::create(*this);
+}
+
+ref_ptr<ArrayState> BillboardArrayState::clone(ref_ptr<ArrayState> arrayState)
+{
+    return BillboardArrayState::create(*arrayState);
+}
+
+void BillboardArrayState::apply(const VertexInputState& vas)
+{
+    getAttributeDetails(vas, vertex_attribute_location, vertexAttribute);
+    getAttributeDetails(vas, position_attribute_location, positionAttribute);
+}
+
+#include <vsg/io/Logger.h>
+
+ref_ptr<const vec3Array> BillboardArrayState::vertexArray(uint32_t instanceIndex)
+{
+    struct GetValue : public ConstVisitor
+    {
+        explicit GetValue(uint32_t i) :
+            index(i) {}
+        uint32_t index;
+        vec4 value;
+
+        void apply(const vec4Value& data) override { value = data.value(); }
+        void apply(const vec4Array& data) override { value = data[index]; }
+    } gv(instanceIndex);
+
+    // get the position_distanceScale value
+    arrays[positionAttribute.binding]->accept(gv);
+    dvec3 position(gv.value.xyz);
+    double autoDistanceScale = gv.value.w;
+
+    dmat4 billboard_to_local;
+    if (!localToWorldStack.empty() && !worldToLocalStack.empty())
+    {
+        auto& mv = localToWorldStack.back();
+        auto& inverse_mv = worldToLocalStack.back();
+
+        auto center_eye = mv * position;
+        double distance = -center_eye.z;
+
+        double scale = (distance < autoDistanceScale) ? distance / autoDistanceScale : 1.0;
+        dmat4 S(scale, 0.0, 0.0, 0.0,
+                0.0, scale, 0.0, 0.0,
+                0.0, 0.0, scale, 0.0,
+                0.0, 0.0, 0.0, 1.0);
+
+        dmat4 T(1.0, 0.0, 0.0, 0.0,
+                0.0, 1.0, 0.0, 0.0,
+                0.0, 0.0, 1.0, 0.0,
+                center_eye.x, center_eye.y, center_eye.z, 1.0);
+
+        dmat4 billboard_mv = T * S;
+        billboard_to_local = inverse_mv * billboard_mv;
+    }
+    else
+    {
+        billboard_to_local = vsg::translate(position);
+    }
+
+    auto new_vertices = vsg::vec3Array::create(static_cast<uint32_t>(vertices->size()));
+    auto src_vertex_itr = vertices->begin();
+    for (auto& v : *new_vertices)
+    {
+        auto& sv = *(src_vertex_itr++);
+        v = vec3(billboard_to_local * dvec3(sv));
+    }
+    return new_vertices;
 }

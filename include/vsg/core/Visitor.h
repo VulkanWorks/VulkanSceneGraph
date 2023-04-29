@@ -56,6 +56,7 @@ namespace vsg
 
     // forward declare vulkan classes
     class BufferInfo;
+    class Compilable;
     class Command;
     class StateCommand;
     class StateSwitch;
@@ -156,6 +157,30 @@ namespace vsg
         virtual void apply(uintValue&);
         virtual void apply(floatValue&);
         virtual void apply(doubleValue&);
+        virtual void apply(vec2Value&);
+        virtual void apply(vec3Value&);
+        virtual void apply(vec4Value&);
+        virtual void apply(dvec2Value&);
+        virtual void apply(dvec3Value&);
+        virtual void apply(dvec4Value&);
+        virtual void apply(bvec2Value&);
+        virtual void apply(bvec3Value&);
+        virtual void apply(bvec4Value&);
+        virtual void apply(ubvec2Value&);
+        virtual void apply(ubvec3Value&);
+        virtual void apply(ubvec4Value&);
+        virtual void apply(svec2Value&);
+        virtual void apply(svec3Value&);
+        virtual void apply(svec4Value&);
+        virtual void apply(usvec2Value&);
+        virtual void apply(usvec3Value&);
+        virtual void apply(usvec4Value&);
+        virtual void apply(ivec2Value&);
+        virtual void apply(ivec3Value&);
+        virtual void apply(ivec4Value&);
+        virtual void apply(uivec2Value&);
+        virtual void apply(uivec3Value&);
+        virtual void apply(uivec4Value&);
 
         // Arrays
         virtual void apply(byteArray&);
@@ -248,6 +273,7 @@ namespace vsg
 
         // Nodes
         virtual void apply(Node&);
+        virtual void apply(Compilable&);
         virtual void apply(Commands&);
         virtual void apply(Group&);
         virtual void apply(QuadGroup&);
@@ -319,7 +345,7 @@ namespace vsg
         virtual void apply(WriteTimestamp&);
         virtual void apply(CopyQueryPoolResults&);
 
-        // rtx classes
+        // mesh shading classes
         virtual void apply(DrawMeshTasks&);
         virtual void apply(DrawMeshTasksIndirect&);
         virtual void apply(DrawMeshTasksIndirectCount&);

@@ -85,17 +85,36 @@ namespace vsg
                 output.write("Value", _value);
         }
 
-        std::size_t valueSize() const override { return sizeof(value_type); }
+        std::size_t valueSize() const override
+        {
+            if constexpr (std::is_same_v<T, std::string>)
+                return _value.size();
+            else
+                return sizeof(value_type);
+        }
         std::size_t valueCount() const override { return 1; }
 
         bool dataAvailable() const override { return true; }
-        std::size_t dataSize() const override { return sizeof(value_type); }
+        std::size_t dataSize() const override { return valueSize(); }
 
-        void* dataPointer() override { return &_value; }
-        const void* dataPointer() const override { return &_value; }
+        void* dataPointer() override
+        {
+            if constexpr (std::is_same_v<T, std::string>)
+                return _value.data();
+            else
+                return &_value;
+        }
 
-        void* dataPointer(size_t) override { return &_value; }
-        const void* dataPointer(size_t) const override { return &_value; }
+        const void* dataPointer() const override
+        {
+            if constexpr (std::is_same_v<T, std::string>)
+                return _value.data();
+            else
+                return &_value;
+        }
+
+        void* dataPointer(size_t) override { return dataPointer(); }
+        const void* dataPointer(size_t) const override { return dataPointer(); }
 
         void* dataRelease() override { return nullptr; }
 
@@ -135,7 +154,7 @@ namespace vsg
     void Object::setValue(const std::string& key, const T& value)
     {
         using ValueT = Value<T>;
-        setObject(key, new ValueT(value));
+        setObject(key, ValueT::create(value));
     }
 
     template<typename T>
@@ -167,6 +186,7 @@ namespace vsg
     }
 
     VSG_value(stringValue, std::string);
+
     VSG_value(boolValue, bool);
     VSG_value(intValue, int);
     VSG_value(uintValue, unsigned int);
@@ -181,13 +201,25 @@ namespace vsg
     VSG_value(dvec3Value, dvec3);
     VSG_value(dvec4Value, dvec4);
 
+    VSG_value(bvec2Value, bvec2);
+    VSG_value(bvec3Value, bvec3);
+    VSG_value(bvec4Value, bvec4);
+
     VSG_value(ubvec2Value, ubvec2);
     VSG_value(ubvec3Value, ubvec3);
     VSG_value(ubvec4Value, ubvec4);
 
+    VSG_value(svec2Value, svec2);
+    VSG_value(svec3Value, svec3);
+    VSG_value(svec4Value, svec4);
+
     VSG_value(usvec2Value, usvec2);
     VSG_value(usvec3Value, usvec3);
     VSG_value(usvec4Value, usvec4);
+
+    VSG_value(ivec2Value, ivec2);
+    VSG_value(ivec3Value, ivec3);
+    VSG_value(ivec4Value, ivec4);
 
     VSG_value(uivec2Value, uivec2);
     VSG_value(uivec3Value, uivec3);

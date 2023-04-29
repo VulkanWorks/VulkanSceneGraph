@@ -87,6 +87,14 @@ bool Trackball::withinRenderArea(const PointerEvent& pointerEvent) const
            (y >= renderArea.offset.y && y < static_cast<int32_t>(renderArea.offset.y + renderArea.extent.height));
 }
 
+bool Trackball::eventRelevant(const WindowEvent& event) const
+{
+    // if no windows have been assocated with Trackball with a Trackball::addWindow() then assume event is relevant and should be handled
+    if (windowOffsets.empty()) return true;
+
+    return (windowOffsets.count(event.window) > 0);
+}
+
 /// compute non dimensional window coordinate (-1,1) from event coords
 dvec2 Trackball::ndc(PointerEvent& event)
 {
@@ -119,7 +127,7 @@ dvec3 Trackball::tbc(PointerEvent& event)
 
 void Trackball::apply(KeyPressEvent& keyPress)
 {
-    if (keyPress.handled || !_lastPointerEventWithinRenderArea) return;
+    if (keyPress.handled || !eventRelevant(keyPress) || !_lastPointerEventWithinRenderArea) return;
 
     if (auto itr = keyViewpointMap.find(keyPress.keyBase); itr != keyViewpointMap.end())
     {
@@ -133,16 +141,16 @@ void Trackball::apply(KeyPressEvent& keyPress)
 
 void Trackball::apply(ButtonPressEvent& buttonPress)
 {
-    if (buttonPress.handled) return;
+    if (buttonPress.handled || !eventRelevant(buttonPress)) return;
 
     _hasFocus = withinRenderArea(buttonPress);
     _lastPointerEventWithinRenderArea = _hasFocus;
 
-    if (buttonPress.mask & BUTTON_MASK_1)
+    if (buttonPress.mask & rotateButtonMask)
         _updateMode = ROTATE;
-    else if (buttonPress.mask & BUTTON_MASK_2)
+    else if (buttonPress.mask & panButtonMask)
         _updateMode = PAN;
-    else if (buttonPress.mask & BUTTON_MASK_3)
+    else if (buttonPress.mask & zoomButtonMask)
         _updateMode = ZOOM;
     else
         _updateMode = INACTIVE;
@@ -158,7 +166,7 @@ void Trackball::apply(ButtonPressEvent& buttonPress)
 
 void Trackball::apply(ButtonReleaseEvent& buttonRelease)
 {
-    if (buttonRelease.handled) return;
+    if (buttonRelease.handled || !eventRelevant(buttonRelease)) return;
 
     if (!windowOffsets.empty() && windowOffsets.count(buttonRelease.window) == 0) return;
 
@@ -172,6 +180,8 @@ void Trackball::apply(ButtonReleaseEvent& buttonRelease)
 
 void Trackball::apply(MoveEvent& moveEvent)
 {
+    if (!eventRelevant(moveEvent)) return;
+
     _lastPointerEventWithinRenderArea = withinRenderArea(moveEvent);
 
     if (moveEvent.handled || !_hasFocus) return;
@@ -255,7 +265,7 @@ void Trackball::apply(MoveEvent& moveEvent)
 
 void Trackball::apply(ScrollWheelEvent& scrollWheel)
 {
-    if (scrollWheel.handled || !_lastPointerEventWithinRenderArea) return;
+    if (scrollWheel.handled || !eventRelevant(scrollWheel) || !_lastPointerEventWithinRenderArea) return;
 
     scrollWheel.handled = true;
 
@@ -264,6 +274,8 @@ void Trackball::apply(ScrollWheelEvent& scrollWheel)
 
 void Trackball::apply(TouchDownEvent& touchDown)
 {
+    if (!eventRelevant(touchDown)) return;
+
     _previousTouches[touchDown.id] = &touchDown;
     switch (touchDown.id)
     {
@@ -276,7 +288,7 @@ void Trackball::apply(TouchDownEvent& touchDown)
                 touchDown.time,
                 touchDown.x,
                 touchDown.y,
-                vsg::ButtonMask::BUTTON_MASK_1,
+                touchMappedToButtonMask,
                 touchDown.id);
             apply(*evt.get());
         }
@@ -299,6 +311,8 @@ void Trackball::apply(TouchDownEvent& touchDown)
 
 void Trackball::apply(TouchUpEvent& touchUp)
 {
+    if (!eventRelevant(touchUp)) return;
+
     if (touchUp.id == 0 && _previousTouches.size() == 1)
     {
         vsg::ref_ptr<vsg::Window> w = touchUp.window;
@@ -307,7 +321,7 @@ void Trackball::apply(TouchUpEvent& touchUp)
             touchUp.time,
             touchUp.x,
             touchUp.y,
-            vsg::ButtonMask::BUTTON_MASK_1,
+            touchMappedToButtonMask,
             touchUp.id);
         apply(*evt.get());
     }
@@ -316,6 +330,8 @@ void Trackball::apply(TouchUpEvent& touchUp)
 
 void Trackball::apply(TouchMoveEvent& touchMove)
 {
+    if (!eventRelevant(touchMove)) return;
+
     vsg::ref_ptr<vsg::Window> w = touchMove.window;
     switch (_previousTouches.size())
     {
@@ -326,7 +342,7 @@ void Trackball::apply(TouchMoveEvent& touchMove)
             touchMove.time,
             touchMove.x,
             touchMove.y,
-            vsg::ButtonMask::BUTTON_MASK_1);
+            touchMappedToButtonMask);
         apply(*evt.get());
         break;
     }
