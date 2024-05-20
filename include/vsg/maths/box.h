@@ -18,7 +18,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 namespace vsg
 {
-    /// t_box template class that represent a axis aligned bounding box
+    /// t_box template class that represents an axis aligned bounding box
     template<typename T>
     struct t_box
     {
@@ -93,4 +93,25 @@ namespace vsg
 
     VSG_type_name(vsg::box);
     VSG_type_name(vsg::dbox);
+
+    template<typename T>
+    constexpr bool operator==(const t_box<T>& lhs, const t_box<T>& rhs)
+    {
+        return (lhs.min == rhs.min) && (lhs.max == rhs.max);
+    }
+
+    template<typename T>
+    constexpr bool operator!=(const t_box<T>& lhs, const t_box<T>& rhs)
+    {
+        return (lhs.min != rhs.min) || (lhs.max != rhs.max);
+    }
+
+    template<typename T>
+    constexpr bool operator<(const t_box<T>& lhs, const t_box<T>& rhs)
+    {
+        if (lhs.min < rhs.min) return true;
+        if (rhs.min < lhs.min) return false;
+        return lhs.max < rhs.max;
+    }
+
 } // namespace vsg
