@@ -75,7 +75,7 @@ void TransformKeyframes::write(Output& output) const
 
     // write position key frames
     output.writeValue<uint32_t>("positions", positions.size());
-    for (auto& position : positions)
+    for (const auto& position : positions)
     {
         output.writePropertyName("position");
         output.write(1, &position.time);
@@ -85,7 +85,7 @@ void TransformKeyframes::write(Output& output) const
 
     // write rotation key frames
     output.writeValue<uint32_t>("rotations", rotations.size());
-    for (auto& rotation : rotations)
+    for (const auto& rotation : rotations)
     {
         output.writePropertyName("rotation");
         output.write(1, &rotation.time);
@@ -95,7 +95,7 @@ void TransformKeyframes::write(Output& output) const
 
     // write scale key frames
     output.writeValue<uint32_t>("scales", scales.size());
-    for (auto& scale : scales)
+    for (const auto& scale : scales)
     {
         output.writePropertyName("scale");
         output.write(1, &scale.time);
@@ -174,7 +174,7 @@ int TransformSampler::compare(const Object& rhs_object) const
     int result = AnimationSampler::compare(rhs_object);
     if (result != 0) return result;
 
-    auto& rhs = static_cast<decltype(*this)>(rhs_object);
+    const auto& rhs = static_cast<decltype(*this)>(rhs_object);
     if ((result = compare_pointer(keyframes, rhs.keyframes)) != 0) return result;
     if ((result = compare_pointer(object, rhs.object)) != 0) return result;
     if ((result = compare_value(position, rhs.position)) != 0) return result;

@@ -11,6 +11,7 @@ endif()
 set(SOURCES
 
     core/Allocator.cpp
+    core/IntrusiveAllocator.cpp
     core/Auxiliary.cpp
     core/ConstVisitor.cpp
     core/Data.cpp
@@ -155,6 +156,7 @@ set(SOURCES
 
     threading/Affinity.cpp
     threading/OperationThreads.cpp
+    threading/DeleteQueue.cpp
 
     app/Camera.cpp
     app/CompileManager.cpp
@@ -220,6 +222,7 @@ set(SOURCES
     vk/CommandPool.cpp
     vk/Context.cpp
     vk/DescriptorPool.cpp
+    vk/DescriptorPools.cpp
     vk/Device.cpp
     vk/DeviceFeatures.cpp
     vk/DeviceMemory.cpp
@@ -248,23 +251,22 @@ set(SOURCES
     utils/Instrumentation.cpp
     utils/GpuAnnotation.cpp
     utils/LineSegmentIntersector.cpp
+    utils/PolytopeIntersector.cpp
     utils/LoadPagedLOD.cpp
     utils/FindDynamicObjects.cpp
     utils/PropagateDynamicObjects.cpp
     utils/Profiler.cpp
 )
 
-if (${VSG_SUPPORTS_ShaderCompiler})
-
-    # include glslang source code directly into the VulkanScenegraph library build.
-    include(../glslang/build_vars.cmake)
-endif()
-
 # set up library dependencies
 set(LIBRARIES PUBLIC
         Vulkan::Vulkan
         Threads::Threads
 )
+
+if (${VSG_SUPPORTS_ShaderCompiler})
+    list(APPEND LIBRARIES PRIVATE glslang::glslang glslang::glslang-default-resource-limits glslang::SPIRV)
+endif()
 
 # Check for std::atomic
 if(NOT MSVC AND NOT ANDROID AND NOT APPLE)
@@ -402,9 +404,6 @@ target_include_directories(vsg
     PUBLIC
         $<BUILD_INTERFACE:${VSG_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${VSG_BINARY_DIR}/include>
-    PRIVATE
-        $<BUILD_INTERFACE:${VSG_SOURCE_DIR}/src/glslang>
-        $<BUILD_INTERFACE:${GLSLANG_GENERATED_INCLUDEDIR}>
 )
 
 target_link_libraries(vsg ${LIBRARIES})
