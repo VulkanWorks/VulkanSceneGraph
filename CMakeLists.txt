@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.7)
 
 project(vsg
-    VERSION 1.1.8
+    VERSION 1.1.10
     DESCRIPTION "VulkanSceneGraph library"
     LANGUAGES CXX
 )
@@ -43,8 +43,16 @@ set(VSG_MAX_INSTRUMENTATION_LEVEL 1 CACHE STRING "Set the instrumentation level 
 # Enable/disable shader compilation support that pulls in glslang
 set(VSG_SUPPORTS_ShaderCompiler  1 CACHE STRING "Optional shader compiler support, 0 for off, 1 for enabled." )
 if (VSG_SUPPORTS_ShaderCompiler)
-    set(GLSLANG_MIN_VERSION "14" CACHE STRING "glslang 14 is the earliest version that we think installs itself properly on all platforms. Other platforms may be able to use an earlier version")
-    find_package(glslang ${GLSLANG_MIN_VERSION} CONFIG)
+
+    # Try looking for glslang 15 first.
+    set(GLSLANG_MIN_VERSION "15" CACHE STRING "glslang 14 is the earliest version that we think installs itself properly on all platforms. Other platforms may be able to use an earlier version")
+    find_package(glslang ${GLSLANG_MIN_VERSION} CONFIG QUIET)
+
+    if (NOT glslang_FOUND)
+        # fallback to trying glslang 14.
+        set(GLSLANG_MIN_VERSION "14")
+        find_package(glslang ${GLSLANG_MIN_VERSION} CONFIG)
+    endif()
 
     if (glslang_FOUND)
         set(FIND_DEPENDENCY_glslang "find_package(glslang ${GLSLANG_MIN_VERSION} CONFIG REQUIRED)")
@@ -156,6 +164,8 @@ set(PBR_DEFINES
     -v "VSG_DIFFUSE_MAP VSG_LIGHTMAP_MAP VSG_METALLROUGHNESS_MAP VSG_NORMAL_MAP VSG_WORKFLOW_SPECGLOSS"
     -v "VSG_DIFFUSE_MAP VSG_EMISSIVE_MAP VSG_LIGHTMAP_MAP VSG_METALLROUGHNESS_MAP VSG_NORMAL_MAP VSG_TWO_SIDED_LIGHTING"
     -v "VSG_DIFFUSE_MAP VSG_EMISSIVE_MAP VSG_LIGHTMAP_MAP VSG_NORMAL_MAP VSG_SPECULAR_MAP VSG_WORKFLOW_SPECGLOSS"
+    -v "VSG_DISPLACEMENT_MAP VSG_DIFFUSE_MAP"
+    -v "VSG_DISPLACEMENT_MAP VSG_DETAIL_MAP VSG_DIFFUSE_MAP"
 )
 
 set(PHONG_DEFINES
@@ -163,6 +173,8 @@ set(PHONG_DEFINES
     -v "VSG_BILLBOARD"
     -v "VSG_DIFFUSE_MAP"
     -v "VSG_BILLBOARD VSG_DIFFUSE_MAP"
+    -v "VSG_DISPLACEMENT_MAP VSG_DIFFUSE_MAP"
+    -v "VSG_DISPLACEMENT_MAP VSG_DETAIL_MAP VSG_DIFFUSE_MAP"
 )
 
 set(FLAT_DEFINES
@@ -170,6 +182,8 @@ set(FLAT_DEFINES
     -v "VSG_BILLBOARD"
     -v "VSG_DIFFUSE_MAP"
     -v "VSG_BILLBOARD VSG_DIFFUSE_MAP"
+    -v "VSG_DISPLACEMENT_MAP VSG_DIFFUSE_MAP"
+    -v "VSG_DISPLACEMENT_MAP VSG_DETAIL_MAP VSG_DIFFUSE_MAP"
 )
 
 set(TEXT_DEFINES

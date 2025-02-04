@@ -191,7 +191,8 @@ duplInheritedMember:*/src/vsg/nodes/Node.cpp
 // suppress unhelpful warning of shadowFunction
 shadowFunction:*/include/vsg/maths/transform.h
 shadowFunction:*/src/io/Path.cpp
-shadowFunction:*/src/vsg/animation/CameraAnimation.cpp
+shadowFunction:*/src/vsg/animation/CameraAnimationHandler.cpp
+shadowFunction:*/src/vsg/animation/CameraSampler.cpp
 shadowFunction:*/src/vsg/animation/TransformSampler.cpp
 shadowFunction:*/src/vsg/io/tile.cpp
 shadowFunction:*/src/vsg/io/FileSystem.cpp
@@ -208,6 +209,7 @@ shadowFunction:*/src/vsg/state/DescriptorImage.cpp
 shadowFunction:*/src/vsg/utils/FindDynamicObjects.cpp
 shadowFunction:*/src/vsg/utils/LoadPagedLOD.cpp
 shadowFunction:*/src/vsg/utils/PropagateDynamicObjects.cpp
+shadowFunction:*/src/vsg/app/ViewMatrix.cpp
 
 // suppress unhelpful warning of c casts
 cstyleCast:*/include/vsg/io/mem_stream.h

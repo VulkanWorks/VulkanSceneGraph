@@ -248,6 +248,11 @@ namespace vsg
     /// assumes matrix has no skew or perspective components
     extern VSG_DECLSPEC bool decompose(const dmat4& m, dvec3& translation, dquat& rotation, dvec3& scale);
 
+    /// decompose long double matrix into translation, rotation and scale components.
+    /// maps to TRS form: vsg::translate(translation) * vsg::rotate(rotation) * vsg::scale(scale);
+    /// assumes matrix has no skew or perspective components
+    extern VSG_DECLSPEC bool decompose(const ldmat4& m, ldvec3& translation, ldquat& rotation, ldvec3& scale);
+
     /// compute the bounding sphere that encloses a frustum defined by specified float ModelViewMatrixProjection
     extern VSG_DECLSPEC sphere computeFrustumBound(const mat4& m);
 
@@ -258,10 +263,12 @@ namespace vsg
     /// usage:  auto matrix = vsg::visit<vsg::ComputeTransform>(nodePath).matrix;
     struct VSG_DECLSPEC ComputeTransform : public ConstVisitor
     {
+        dvec3 origin;
         dmat4 matrix;
 
         void apply(const Transform& transform) override;
         void apply(const MatrixTransform& mt) override;
+        void apply(const CoordinateFrame& cf) override;
         void apply(const Camera& camera) override;
     };
 

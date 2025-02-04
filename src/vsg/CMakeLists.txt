@@ -22,6 +22,7 @@ set(SOURCES
     core/Visitor.cpp
     core/Version.cpp
 
+    maths/common.cpp
     maths/maths_transform.cpp
 
     nodes/Group.cpp
@@ -34,6 +35,7 @@ set(SOURCES
     nodes/PagedLOD.cpp
     nodes/AbsoluteTransform.cpp
     nodes/MatrixTransform.cpp
+    nodes/CoordinateFrame.cpp
     nodes/Transform.cpp
     nodes/VertexDraw.cpp
     nodes/VertexIndexDraw.cpp
@@ -197,11 +199,12 @@ set(SOURCES
     animation/Animation.cpp
     animation/AnimationGroup.cpp
     animation/AnimationManager.cpp
-    animation/CameraAnimation.cpp
+    animation/CameraAnimationHandler.cpp
     animation/FindAnimations.cpp
     animation/Joint.cpp
     animation/JointSampler.cpp
     animation/MorphSampler.cpp
+    animation/CameraSampler.cpp
     animation/TransformSampler.cpp
 
     ui/UIEvent.cpp
@@ -241,6 +244,7 @@ set(SOURCES
     vk/ResourceRequirements.cpp
 
     utils/CommandLine.cpp
+    utils/CoordinateSpace.cpp
     utils/Builder.cpp
     utils/SharedObjects.cpp
     utils/ShaderSet.cpp
@@ -265,7 +269,7 @@ set(LIBRARIES PUBLIC
 )
 
 if (${VSG_SUPPORTS_ShaderCompiler})
-    list(APPEND LIBRARIES PRIVATE glslang::glslang glslang::glslang-default-resource-limits glslang::SPIRV)
+    list(INSERT LIBRARIES 0 PRIVATE glslang::glslang glslang::glslang-default-resource-limits glslang::SPIRV)
 endif()
 
 # Check for std::atomic

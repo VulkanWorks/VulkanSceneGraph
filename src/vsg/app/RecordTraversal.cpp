@@ -18,7 +18,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/commands/Commands.h>
 #include <vsg/io/DatabasePager.h>
 #include <vsg/io/Logger.h>
-#include <vsg/io/Options.h>
 #include <vsg/io/stream.h>
 #include <vsg/lighting/AmbientLight.h>
 #include <vsg/lighting/DirectionalLight.h>
@@ -27,6 +26,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/lighting/SpotLight.h>
 #include <vsg/maths/plane.h>
 #include <vsg/nodes/Bin.h>
+#include <vsg/nodes/CoordinateFrame.h>
 #include <vsg/nodes/CullGroup.h>
 #include <vsg/nodes/CullNode.h>
 #include <vsg/nodes/DepthSorted.h>
@@ -429,6 +429,40 @@ void RecordTraversal::apply(const MatrixTransform& mt)
     else
     {
         mt.traverse(*this);
+    }
+
+    _state->modelviewMatrixStack.pop();
+    _state->dirty = true;
+}
+
+void RecordTraversal::apply(const CoordinateFrame& cf)
+{
+    GPU_INSTRUMENTATION_L2_NCO(instrumentation, *getCommandBuffer(), "CoordinateFrame", COLOR_RECORD_L2, &cf);
+
+    const View* parentView = _viewDependentState ? _viewDependentState->view : nullptr;
+    const Camera* camera = parentView ? parentView->camera : nullptr;
+    const ViewMatrix* viewMatrix = camera ? camera->viewMatrix : nullptr;
+
+    if (viewMatrix)
+    {
+        _state->modelviewMatrixStack.push(viewMatrix->transform(cf.origin) * vsg::rotate(cf.rotation));
+    }
+    else
+    {
+        _state->modelviewMatrixStack.push(cf);
+    }
+
+    _state->dirty = true;
+
+    if (cf.subgraphRequiresLocalFrustum)
+    {
+        _state->pushFrustum();
+        cf.traverse(*this);
+        _state->popFrustum();
+    }
+    else
+    {
+        cf.traverse(*this);
     }
 
     _state->modelviewMatrixStack.pop();
