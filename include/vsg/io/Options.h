@@ -47,7 +47,6 @@ namespace vsg
 
         Options& operator=(const Options& rhs) = delete;
 
-
         /// read command line options, assign values to this options object to later use with reading/writing files
         virtual bool readOptions(CommandLine& arguments);
 
@@ -101,11 +100,10 @@ namespace vsg
         /// mechanism for finding dynamic objects in loaded scene graph
         ref_ptr<FindDynamicObjects> findDynamicObjects;
 
-        /// mechanism for propogating dynamic objects classification up parental chain so that cloning is done on all dynamic objects to avoid sharing of dyanmic parts.
+        /// mechanism for propagating dynamic objects classification up parental chain so that cloning is done on all dynamic objects to avoid sharing of dynamic parts.
         ref_ptr<PropagateDynamicObjects> propagateDynamicObjects;
 
     public:
-
         ref_ptr<Object> clone(const CopyOp& copyop = {}) const override { return Options::create(*this, copyop); }
         int compare(const Object& rhs) const override;
 
