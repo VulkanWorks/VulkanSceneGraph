@@ -14,6 +14,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/core/Value.h>
 #include <vsg/io/JSONParser.h>
 #include <vsg/io/Path.h>
+#include <vsg/io/convert_utf.h>
 #include <vsg/io/mem_stream.h>
 #include <vsg/io/read.h>
 
@@ -197,19 +198,13 @@ bool JSONParser::read_uri(std::string& value, ref_ptr<Object>& object)
     {
         if (buffer.compare(pos + 1, 5, "data:") == 0)
         {
-            vsg::info("We have a data URI");
-
             auto semicolon = buffer.find(';', pos + 6);
 
             std::string memeType = buffer.substr(pos + 6, semicolon - pos - 6);
 
-            vsg::info("memeType = ", memeType);
-
             auto comma = buffer.find(',', semicolon + 1);
 
             std::string encoding = buffer.substr(semicolon + 1, comma - semicolon - 1);
-
-            vsg::info("encoding = ", encoding);
 
             // value = buffer.substr(comma+1, end_of_value - comma -1);
 
@@ -218,8 +213,6 @@ bool JSONParser::read_uri(std::string& value, ref_ptr<Object>& object)
 
             pos = end_of_value + 1;
 
-            vsg::info("value = ", value, ", object = ", object);
-
             return true;
         }
     }
@@ -227,8 +220,6 @@ bool JSONParser::read_uri(std::string& value, ref_ptr<Object>& object)
     value = buffer.substr(pos + 1, end_of_value - pos - 1);
 
     object = vsg::read(value, options);
-
-    vsg::info("read_uri(", pos, ") -> value = [", value, "] & object = ", object);
 
     pos = end_of_value + 1;
 
@@ -254,15 +245,102 @@ bool JSONParser::read_string(std::string& value)
 {
     if (buffer[pos] != '"') return false;
 
-    // read string
-    auto end_of_value = buffer.find('"', pos + 1);
-    if (end_of_value == std::string::npos) return false;
+    value.clear();
 
-    // TODO: need to add support for escape characters.
+    ++pos;
 
-    value = buffer.substr(pos + 1, end_of_value - pos - 1);
+    auto end_of_value = buffer.find_first_of("\"\\", pos);
+    while (end_of_value != std::string::npos)
+    {
+        if (buffer[end_of_value] == '\\' && end_of_value + 1 < buffer.size()) // control character
+        {
+            value.append(buffer, pos, end_of_value - pos);
 
-    pos = end_of_value + 1;
+            /*
+                https://www.json.org/json-en.html
+
+                Control characters:
+                \" -> "
+                \\ -> \
+                \/ -> /
+                \b -> backspace
+                \f -> formfeed
+                \n -> linefeed
+                \r -> carraige return
+                \t -> horizontal tab
+                \u -> 4 hex digits
+            */
+
+            switch (buffer[end_of_value + 1])
+            {
+            case ('"'):
+                value.append("\"");
+                pos = end_of_value + 2;
+                break;
+            case ('\\'):
+                value.append("\\");
+                pos = end_of_value + 2;
+                break;
+            case ('/'):
+                value.append("/");
+                pos = end_of_value + 2;
+                break;
+            case ('b'):
+                value.append("\b");
+                pos = end_of_value + 2;
+                break;
+            case ('f'):
+                value.append("\f");
+                pos = end_of_value + 2;
+                break;
+            case ('n'):
+                value.append("\n");
+                pos = end_of_value + 2;
+                break;
+            case ('r'):
+                value.append("\r");
+                pos = end_of_value + 2;
+                break;
+            case ('t'):
+                value.append("\t");
+                pos = end_of_value + 2;
+                break;
+            case ('u'): {
+                uint32_t number = 0;
+                for (size_t i = 0; i < 4; ++i)
+                {
+                    number = number * 16;
+                    auto c = buffer[end_of_value + i + 2];
+                    if (c >= '0' && c <= '9')
+                        number += (c - '0');
+                    else if (c >= 'a' && c <= 'f')
+                        number += (10 + (c - 'a'));
+                    else if (c >= 'A' && c <= 'F')
+                        number += (10 + (c - 'A'));
+                }
+
+                pos = end_of_value + 6;
+
+                convert_utf(wchar_t(number), value); // TODO generalize convert_itf to handle uint32's rather than wchat_t.
+
+                break;
+            }
+            default: {
+                vsg::warn("JSONParser::read_string() unsupport control sequence: ", buffer[end_of_value], buffer[end_of_value + 1]);
+                pos = end_of_value + 2;
+                break;
+            }
+            }
+
+            end_of_value = buffer.find_first_of("\"\\", pos);
+        }
+        else // simple " ending
+        {
+            value.append(buffer, pos, end_of_value - pos);
+            pos = end_of_value + 1;
+            break;
+        }
+    }
 
     return true;
 }

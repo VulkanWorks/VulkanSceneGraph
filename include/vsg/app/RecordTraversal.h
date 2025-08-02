@@ -63,6 +63,9 @@ namespace vsg
     class CommandGraph;
     class RecordedCommandBuffers;
     class Instrumentation;
+    class InstanceNode;
+    class InstanceDraw;
+    class InstanceDrawIndexed;
 
     VSG_type_name(vsg::RecordTraversal);
 
@@ -86,6 +89,9 @@ namespace vsg
 
         Mask traversalMask = MASK_ALL;
         Mask overrideMask = MASK_OFF;
+
+        /// Light::intensity minimum value for a light to be passed to GPU.
+        float intensityMinimum = 0.001f;
 
         ref_ptr<Instrumentation> instrumentation;
 
@@ -141,6 +147,11 @@ namespace vsg
 
         // Animation nodes
         void apply(const Joint& joint);
+
+        // instance nodes
+        void apply(const InstanceNode& instanceNode);
+        void apply(const InstanceDraw& instanceDraw);
+        void apply(const InstanceDrawIndexed& instanceDrawIndexed);
 
         // Vulkan nodes
         void apply(const StateGroup& object);

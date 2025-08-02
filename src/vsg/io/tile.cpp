@@ -169,6 +169,10 @@ vsg::ref_ptr<vsg::Object> tile::read_root(vsg::ref_ptr<const vsg::Options> optio
                 {
                     imageData = settings->imageLayerCallback(imageData);
                 }
+                else if (!imageData)
+                {
+                    vsg::warn("tile::read_root() unable read image data, imagePath = ", imagePath);
+                }
             }
 
             if (settings->detailLayer)
@@ -179,6 +183,10 @@ vsg::ref_ptr<vsg::Object> tile::read_root(vsg::ref_ptr<const vsg::Options> optio
                 {
                     detailData = settings->detailLayerCallback(detailData);
                 }
+                else if (!detailData)
+                {
+                    vsg::warn("tile::read_root() unable read detail data, detailPath = ", detailPath);
+                }
             }
 
             if (settings->elevationLayer)
@@ -188,6 +196,10 @@ vsg::ref_ptr<vsg::Object> tile::read_root(vsg::ref_ptr<const vsg::Options> optio
                 if (elevationData && settings->elevationLayerCallback)
                 {
                     elevationData = settings->elevationLayerCallback(elevationData);
+                }
+                else if (!elevationData)
+                {
+                    vsg::warn("tile::read_root() unable read elevation data, terrainPath = ", terrainPath);
                 }
             }
 
@@ -470,7 +482,7 @@ void tile::init(vsg::ref_ptr<const vsg::Options> options)
         _graphicsPipelineConfig->enableTexture("displacementMap");
         _graphicsPipelineConfig->enableDescriptor("displacementMapScale");
 
-        auto elevationData = vsg::floatValue::create(0.0f);
+        auto elevationData = vsg::floatArray2D::create(1, 1, 0.0f);
         elevationData->properties.format = VK_FORMAT_R32_SFLOAT;
         _elevationFallback = vsg::DescriptorImage::create(_sampler, elevationData, 7, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     }
@@ -503,6 +515,20 @@ void tile::init(vsg::ref_ptr<const vsg::Options> options)
 
         auto mat = vsg::PhongMaterialValue::create();
         _material = vsg::DescriptorBuffer::create(mat, 10, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    }
+
+    if (auto& texCoordIndicesBinding = _shaderSet->getDescriptorBinding("texCoordIndices"))
+    {
+        // Assumed texCoordIndicesBinding.set is equal to _materialSetIndex used to assign the tile texture and texCoordIndices
+
+        ref_ptr<Data> indices = texCoordIndicesBinding.data;
+        if (!indices) indices = vsg::TexCoordIndicesValue::create();
+        _texCoordIndices = vsg::DescriptorBuffer::create(indices, texCoordIndicesBinding.binding, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    }
+    else
+    {
+        auto indices = vsg::TexCoordIndicesValue::create();
+        _texCoordIndices = vsg::DescriptorBuffer::create(indices, 11, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     }
 
     _graphicsPipelineConfig->init();
@@ -558,6 +584,7 @@ ref_ptr<BindDescriptorSet> tile::createBindDescriptorSet(ref_ptr<Data> imageData
     }
 
     descriptors.push_back(_material);
+    descriptors.push_back(_texCoordIndices);
 
     return vsg::BindDescriptorSet::create(VK_PIPELINE_BIND_POINT_GRAPHICS, _graphicsPipelineConfig->layout, _materialSetIndex, descriptors);
 }

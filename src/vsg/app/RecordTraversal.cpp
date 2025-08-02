@@ -32,6 +32,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/nodes/DepthSorted.h>
 #include <vsg/nodes/Geometry.h>
 #include <vsg/nodes/Group.h>
+#include <vsg/nodes/InstanceDraw.h>
+#include <vsg/nodes/InstanceDrawIndexed.h>
+#include <vsg/nodes/InstanceNode.h>
 #include <vsg/nodes/LOD.h>
 #include <vsg/nodes/Layer.h>
 #include <vsg/nodes/MatrixTransform.h>
@@ -363,7 +366,7 @@ void RecordTraversal::apply(const AmbientLight& light)
     CPU_INSTRUMENTATION_L2_O(instrumentation, &light);
 
     //debug("RecordTraversal::apply(AmbientLight) ", light.className());
-    if (_viewDependentState) _viewDependentState->ambientLights.emplace_back(_state->modelviewMatrixStack.top(), &light);
+    if (light.intensity >= intensityMinimum && _viewDependentState) _viewDependentState->ambientLights.emplace_back(_state->modelviewMatrixStack.top(), &light);
 }
 
 void RecordTraversal::apply(const DirectionalLight& light)
@@ -371,7 +374,7 @@ void RecordTraversal::apply(const DirectionalLight& light)
     CPU_INSTRUMENTATION_L2_O(instrumentation, &light);
 
     //debug("RecordTraversal::apply(DirectionalLight) ", light.className());
-    if (_viewDependentState) _viewDependentState->directionalLights.emplace_back(_state->modelviewMatrixStack.top(), &light);
+    if (light.intensity >= intensityMinimum && _viewDependentState) _viewDependentState->directionalLights.emplace_back(_state->modelviewMatrixStack.top(), &light);
 }
 
 void RecordTraversal::apply(const PointLight& light)
@@ -379,7 +382,7 @@ void RecordTraversal::apply(const PointLight& light)
     CPU_INSTRUMENTATION_L2_O(instrumentation, &light);
 
     //debug("RecordTraversal::apply(PointLight) ", light.className());
-    if (_viewDependentState) _viewDependentState->pointLights.emplace_back(_state->modelviewMatrixStack.top(), &light);
+    if (light.intensity >= intensityMinimum && _viewDependentState) _viewDependentState->pointLights.emplace_back(_state->modelviewMatrixStack.top(), &light);
 }
 
 void RecordTraversal::apply(const SpotLight& light)
@@ -387,7 +390,7 @@ void RecordTraversal::apply(const SpotLight& light)
     CPU_INSTRUMENTATION_L2_O(instrumentation, &light);
 
     //debug("RecordTraversal::apply(SpotLight) ", light.className());
-    if (_viewDependentState) _viewDependentState->spotLights.emplace_back(_state->modelviewMatrixStack.top(), &light);
+    if (light.intensity >= intensityMinimum && _viewDependentState) _viewDependentState->spotLights.emplace_back(_state->modelviewMatrixStack.top(), &light);
 }
 
 // transform nodes
@@ -477,6 +480,33 @@ void RecordTraversal::apply(const Joint&)
     // non op for RiggedJoint as it's designed not to have any renderable children
 }
 
+void RecordTraversal::apply(const InstanceNode& instanceNode)
+{
+    CPU_INSTRUMENTATION_L2(instrumentation);
+
+    if (instanceNode.child)
+    {
+        _state->_commandBuffer->instanceNode = &instanceNode;
+        instanceNode.child->accept(*this);
+    }
+}
+
+void RecordTraversal::apply(const InstanceDraw& instanceDraw)
+{
+    CPU_INSTRUMENTATION_L2(instrumentation);
+
+    _state->record();
+    instanceDraw.record(*(_state->_commandBuffer));
+}
+
+void RecordTraversal::apply(const InstanceDrawIndexed& instanceDrawIndexed)
+{
+    CPU_INSTRUMENTATION_L2(instrumentation);
+
+    _state->record();
+    instanceDrawIndexed.record(*(_state->_commandBuffer));
+}
+
 // Vulkan nodes
 void RecordTraversal::apply(const StateGroup& stateGroup)
 {
@@ -525,6 +555,9 @@ void RecordTraversal::apply(const Bin& bin)
 void RecordTraversal::apply(const View& view)
 {
     GPU_INSTRUMENTATION_L1_NCO(instrumentation, *getCommandBuffer(), "View", COLOR_RECORD_L1, &view);
+
+    // dirty the state stacks to ensure state is newly applied for the View.
+    _state->dirtyStateStacks();
 
     // note, View::accept() updates the RecordTraversal's traversalMask
     auto cached_traversalMask = _state->_commandBuffer->traversalMask;

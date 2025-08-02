@@ -28,12 +28,12 @@ namespace vsg
         column_type value[2];
 
         constexpr t_mat2() :
-            value{{1, 0},
-                  {0, 1}} {}
+            value{{numbers<value_type>::one(), numbers<value_type>::zero()},
+                  {numbers<value_type>::zero(), numbers<value_type>::one()}} {}
 
         constexpr explicit t_mat2(value_type v) :
-            value{{v, 0},
-                  {0, v}} {}
+            value{{v, numbers<value_type>::zero()},
+                  {numbers<value_type>::zero(), v}} {}
 
         constexpr t_mat2(value_type v0, value_type v1, /* column 0 */
                          value_type v2, value_type v3) /* column 1 */ :
@@ -138,16 +138,16 @@ namespace vsg
     }
 
     template<typename T>
-    t_vec3<T> operator*(const t_mat2<T>& lhs, const t_vec2<T>& rhs)
+    t_vec2<T> operator*(const t_mat2<T>& lhs, const t_vec2<T>& rhs)
     {
-        return t_vec3<T>((lhs[0][0] * rhs[0] + lhs[1][0] * rhs[1]),
+        return t_vec2<T>((lhs[0][0] * rhs[0] + lhs[1][0] * rhs[1]),
                          (lhs[0][1] * rhs[0] + lhs[1][1] * rhs[1]));
     }
 
     template<typename T>
-    t_vec3<T> operator*(const t_vec2<T>& lhs, const t_mat2<T>& rhs)
+    t_vec2<T> operator*(const t_vec2<T>& lhs, const t_mat2<T>& rhs)
     {
-        return t_vec3<T>(lhs[0] * rhs[0][0] + lhs[1] * rhs[0][1],
+        return t_vec2<T>(lhs[0] * rhs[0][0] + lhs[1] * rhs[0][1],
                          lhs[0] * rhs[1][0] + lhs[1] * rhs[1][1]);
     }
 } // namespace vsg
